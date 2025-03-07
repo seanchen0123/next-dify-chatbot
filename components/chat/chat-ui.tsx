@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Send } from "lucide-react"
 import { ChatMessage } from "./chat-message"
 import { EmptyScreen } from "./empty-screen"
 import { Message } from "@/types/chat"
@@ -11,6 +10,13 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Send, Plus, Search, Sparkles } from "lucide-react"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface ChatUIProps {
   chatId?: string
@@ -171,28 +177,73 @@ export function ChatUI({ chatId }: ChatUIProps) {
             </div>
           </ScrollArea>
           
-          {/* 消息输入区域 */}
+          {/* 消息输入区域 - 重写部分 */}
           <div className="border-t p-4">
             <form onSubmit={handleSendMessage} className="mx-auto max-w-3xl">
-              <div className="relative flex items-end">
-                <Textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="输入消息..."
-                  className="min-h-[60px] max-h-[200px] pr-12 resize-none"
-                  disabled={isLoading || !chatId}
-                />
-                <Button
-                  type="submit"
-                  size="icon"
-                  className="absolute right-2 bottom-2"
-                  disabled={isLoading || !input.trim() || !chatId}
-                >
-                  <Send className="h-5 w-5" />
-                  <span className="sr-only">发送</span>
-                </Button>
+              <div className="relative flex flex-col rounded-lg border bg-background shadow-sm">
+                {/* 输入框 */}
+                <div className="relative flex items-end p-2">
+                  <Textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="输入消息..."
+                    className="min-h-[40px] max-h-[200px] resize-none border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    disabled={isLoading || !chatId}
+                  />
+                </div>
+                
+                {/* 底部工具栏 */}
+                <div className="flex items-center justify-between border-t px-3 py-1.5">
+                  <div className="flex items-center gap-2">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-full">
+                            <Plus className="h-4 w-4" />
+                            <span className="sr-only">新建</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">新建</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-full">
+                            <Search className="h-4 w-4" />
+                            <span className="sr-only">搜索</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">搜索</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-full">
+                            <Sparkles className="h-4 w-4" />
+                            <span className="sr-only">推理</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">推理</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="rounded-full"
+                    disabled={isLoading || !input.trim() || !chatId}
+                  >
+                    <Send className="h-4 w-4 mr-1" />
+                    发送
+                  </Button>
+                </div>
               </div>
             </form>
           </div>
