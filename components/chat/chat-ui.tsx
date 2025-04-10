@@ -24,12 +24,12 @@ export function ChatUI({ chatId }: ChatUIProps) {
     startNewChat,
     messages,
     sendMessage,
-    stopGeneration
+    stopGeneration,
+    generateLoading
   } = useChat()
 
   // 移除本地的 messages 状态，使用 context 中的
   const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -77,13 +77,10 @@ export function ChatUI({ chatId }: ChatUIProps) {
 
   // 添加停止生成函数
   const handleStopGeneration = async () => {
-    setIsLoading(true)
     try {
       await stopGeneration()
     } catch (error) {
       console.error('停止生成失败:', error)
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -91,9 +88,7 @@ export function ChatUI({ chatId }: ChatUIProps) {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!input.trim() || isLoading) return
-
-    setIsLoading(true)
+    if (!input.trim() || generateLoading) return
 
     try {
       const prompt = input.trim()
@@ -101,15 +96,13 @@ export function ChatUI({ chatId }: ChatUIProps) {
       await sendMessage(prompt)
     } catch (error) {
       console.error('发送消息失败:', error)
-    } finally {
-      setIsLoading(false)
     }
   }
 
   return (
     <div className="flex h-full flex-col">
       {/* 聊天消息区域 - 修改条件判断，使用 context 中的 messages */}
-      {!chatStarted && !isLoading && messages.length === 0 ? (
+      {!chatStarted && !generateLoading && messages.length === 0 ? (
         <EmptyScreen onStartChat={handleStartChat}/>
       ) : (
         <>
@@ -118,14 +111,14 @@ export function ChatUI({ chatId }: ChatUIProps) {
               {messages.map(message => (
                 <ChatMessage key={message.id} message={message} />
               ))}
-              {isLoading && !messages.length && (
+              {generateLoading && !messages.length && (
                 <div className="space-y-2">
                   <Skeleton className="h-12 w-3/4" />
                   <Skeleton className="h-12 w-1/2" />
                   <Skeleton className="h-12 w-2/3" />
                 </div>
               )}
-              {isLoading && messages.length > 0 && (
+              {generateLoading && messages.length > 0 && (
                 <div className="px-3 flex items-center space-x-1 text-muted-foreground">
                   <div className="h-1 w-1 animate-bounce rounded-full bg-muted-foreground"></div>
                   <div
@@ -155,7 +148,7 @@ export function ChatUI({ chatId }: ChatUIProps) {
                     onKeyDown={handleKeyDown}
                     placeholder="输入消息..."
                     className="min-h-[40px] max-h-[200px] resize-none border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    disabled={isLoading}
+                    disabled={generateLoading}
                   />
                 </div>
 
@@ -199,13 +192,13 @@ export function ChatUI({ chatId }: ChatUIProps) {
                     </TooltipProvider>
                   </div>
                   <Button
-                    type={isLoading ? 'button' : 'submit'}
+                    type={generateLoading ? 'button' : 'submit'}
                     size="sm"
                     className="rounded-full"
-                    disabled={!isLoading && !input.trim()}
-                    onClick={isLoading ? handleStopGeneration : undefined}
+                    disabled={!generateLoading && !input.trim()}
+                    onClick={generateLoading ? handleStopGeneration : undefined}
                   >
-                    {isLoading ? (
+                    {generateLoading ? (
                       <>
                         <span className="h-4 w-4 mr-1 bg-background rounded-full animate-pulse"></span>
                         停止

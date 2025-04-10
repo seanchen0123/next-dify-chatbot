@@ -22,6 +22,8 @@ interface ChatContextType {
   updateLastMessage: (content: string) => void
   isLoadingMessages: boolean
   hasMoreMessages: boolean
+  generateLoading: boolean
+  setGenerateLoading: React.Dispatch<React.SetStateAction<boolean>>
   loadMoreMessages: (conversationId: string) => Promise<void>
   // 新增会话列表相关状态和方法
   conversations: ApiConversation[]
@@ -45,6 +47,8 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
   const [messages, setMessages] = useState<DisplayMessage[]>([])
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
   const [hasMoreMessages, setHasMoreMessages] = useState(false)
+  // 内容生成时的loading状态
+  const [generateLoading, setGenerateLoading] = useState(false)
 
   // 新增会话列表相关状态
   const [conversations, setConversations] = useState<ApiConversation[]>([])
@@ -196,7 +200,8 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
   function handleMessageEvent(eventData: MessageEvent) {
     const { answer, from_variable_selector, conversation_id } = eventData
     if (from_variable_selector && from_variable_selector[1] === 'text') {
-      // console.log('收到消息:', answer)
+      setGenerateLoading(false)
+      console.log('收到消息:', answer)
       // 保存会话ID
       if (conversation_id && !conversationId) {
         setConversationId(conversation_id)
@@ -307,6 +312,7 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
   const sendMessage = async (prompt: string) => {
     if (!prompt.trim() || isLoading) return
 
+    setGenerateLoading(true)
     const userMessage: DisplayMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
@@ -348,6 +354,8 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
         content: '抱歉，处理您的请求时发生错误。',
         createdAt: new Date()
       })
+    } finally {
+      setGenerateLoading(false)
     }
   }
 
@@ -389,7 +397,9 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
         currentTaskId,
         setCurrentTaskId,
         sendMessage,
-        stopGeneration
+        stopGeneration,
+        generateLoading,
+        setGenerateLoading
       }}
     >
       {children}
