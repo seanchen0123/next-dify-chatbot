@@ -1,6 +1,16 @@
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { User, Bot, CopyIcon, PencilIcon, RefreshCwIcon, ThumbsUpIcon, ThumbsDownIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
+import {
+  User,
+  Bot,
+  CopyIcon,
+  PencilIcon,
+  RefreshCwIcon,
+  ThumbsUpIcon,
+  ThumbsDownIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
+} from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
@@ -35,22 +45,22 @@ export function ChatMessage({ message: { role, content } }: ChatMessageProps) {
     if (role === 'assistant') {
       // 检查是否包含思考过程的开始标签
       const hasOpeningTag = content.includes('<details')
-      
+
       // 检查是否包含完整的思考过程（开始和结束标签）
       const hasClosingTag = content.includes('</details>')
-      
+
       if (hasOpeningTag) {
         let thinkingContent = null
-        let mainContent = ""
-        
+        let mainContent = ''
+
         if (hasClosingTag) {
           // 完整的思考过程
           const detailsStartIndex = content.indexOf('<details')
           const detailsEndIndex = content.indexOf('</details>') + '</details>'.length
-          
+
           if (detailsStartIndex !== -1 && detailsEndIndex !== -1) {
             const detailsContent = content.substring(detailsStartIndex, detailsEndIndex)
-            
+
             // 提取 summary 标签之后的内容
             const summaryEndIndex = detailsContent.indexOf('</summary>')
             if (summaryEndIndex !== -1) {
@@ -63,37 +73,33 @@ export function ChatMessage({ message: { role, content } }: ChatMessageProps) {
                 .substring(detailsContent.indexOf('>') + 1, detailsContent.length - '</details>'.length)
                 .trim()
             }
-            
+
             // 提取主要内容（details 标签之后的内容）
             mainContent = content.substring(detailsEndIndex).trim()
           }
         } else {
           // 不完整的思考过程（只有开始标签）
           const detailsStartIndex = content.indexOf('<details')
-          
+
           if (detailsStartIndex !== -1) {
             const detailsContent = content.substring(detailsStartIndex)
-            
+
             // 提取 summary 标签之后的内容
             const summaryEndIndex = detailsContent.indexOf('</summary>')
             if (summaryEndIndex !== -1) {
-              thinkingContent = detailsContent
-                .substring(summaryEndIndex + '</summary>'.length)
-                .trim()
+              thinkingContent = detailsContent.substring(summaryEndIndex + '</summary>'.length).trim()
             } else {
               // 没有 summary 标签或者 summary 标签不完整
               const openTagEndIndex = detailsContent.indexOf('>')
               if (openTagEndIndex !== -1) {
-                thinkingContent = detailsContent
-                  .substring(openTagEndIndex + 1)
-                  .trim()
+                thinkingContent = detailsContent.substring(openTagEndIndex + 1).trim()
               } else {
-                thinkingContent = "思考中..."
+                thinkingContent = '思考中...'
               }
             }
           }
         }
-        
+
         setProcessedContent({
           thinking: thinkingContent,
           mainContent: mainContent
@@ -157,11 +163,8 @@ export function ChatMessage({ message: { role, content } }: ChatMessageProps) {
               <span className="ml-3 prose prose-sm dark:prose-invert max-w-none prose-pre:border-0 prose-pre:bg-transparent">
                 {/* 思考过程部分 - 使用 Collapsible 组件 */}
                 {processedContent.thinking && (
-                  <Collapsible
-                    open={isThinkingOpen}
-                    onOpenChange={setIsThinkingOpen}
-                    className="mb-3"
-                  >
+                  <div className='pt-2 px-2 bg-muted/50 rounded-md border border-muted-foreground/20'>
+                  <Collapsible open={isThinkingOpen} onOpenChange={setIsThinkingOpen} className="mb-3">
                     <div className="flex items-center gap-2 mb-1">
                       <CollapsibleTrigger asChild>
                         <Button variant="ghost" size="sm" className="p-0 h-6 hover:bg-transparent">
@@ -170,19 +173,22 @@ export function ChatMessage({ message: { role, content } }: ChatMessageProps) {
                           ) : (
                             <ChevronDownIcon className="h-4 w-4 text-muted-foreground" />
                           )}
-                          <span className='text-xs text-muted-foreground font-medium'>思考过程 {isThinkingOpen ? '(点击折叠)' : '(点击展开)'}</span>
+                          <span className="text-xs text-muted-foreground font-medium">
+                            思考过程 {isThinkingOpen ? '(点击折叠)' : '(点击展开)'}
+                          </span>
                         </Button>
                       </CollapsibleTrigger>
                     </div>
-                    
+
                     <CollapsibleContent>
-                      <div className="p-3 bg-muted/50 rounded-md border border-muted-foreground/20">
-                        <div className="text-sm text-muted-foreground whitespace-pre-wrap">{processedContent.thinking}</div>
+                      <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                        {processedContent.thinking}
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
+                  </div>
                 )}
-                
+
                 {/* 主要内容部分 */}
                 {processedContent.mainContent && (
                   <Markdown
