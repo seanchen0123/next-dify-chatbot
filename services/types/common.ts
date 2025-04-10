@@ -35,3 +35,10 @@ export interface StopMessageParams {
   userId: string
   taskId: string
 }
+
+export interface SubmitMessageFeedbackParams {
+  messageId: string
+  userId: string
+  rating: 'like' | 'dislike' | null
+  content?: string
+}

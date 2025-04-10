@@ -1,7 +1,7 @@
 import api from '@/lib/api'
 import { Message, MessagesResponse, GetFormattedMessagesResult } from '@/types/message'
 import { formatMessagesToDisplay, sortMessagesByTime } from '@/lib/utils'
-import { GetMessagesParams, StopMessageParams } from '../types/common'
+import { GetMessagesParams, StopMessageParams, SubmitMessageFeedbackParams } from '../types/common'
 
 // 获取会话历史消息（原始格式）
 export async function getMessages(params: GetMessagesParams): Promise<Message[]> {
@@ -56,13 +56,26 @@ export async function getFormattedMessages(params: GetMessagesParams): Promise<G
   }
 }
 
-// 在现有文件中添加以下函数
+// 提交消息反馈（点赞/点踩）
+export async function submitMessageFeedback(params: SubmitMessageFeedbackParams): Promise<void> {
+  const { messageId, userId, rating, content } = params
+  try {
+    await api.post(`/messages/${messageId}/feedbacks`, {
+      userId,
+      rating,
+      content
+    })
+  } catch (error) {
+    console.error('提交消息反馈失败:', error)
+    throw error
+  }
+}
 
 // 停止消息生成
 export async function stopMessageGeneration(params: StopMessageParams): Promise<void> {
   try {
     const { taskId, userId } = params
-    
+
     await api.post(`/chat-messages/${taskId}/stop`, {
       userId
     })

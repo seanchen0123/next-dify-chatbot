@@ -9,7 +9,8 @@ import {
   ThumbsUpIcon,
   ThumbsDownIcon,
   ChevronDownIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
+  CheckIcon
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
@@ -24,18 +25,26 @@ import { useRef, useState, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { DisplayMessage } from '@/types/message'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { useChat } from '@/contexts/chat-context'
+import { toast } from 'sonner'
+import { submitMessageFeedback } from '@/services/client/messages'
 
 interface ChatMessageProps {
   message: DisplayMessage
 }
 
-export function ChatMessage({ message: { role, content } }: ChatMessageProps) {
+export function ChatMessage({ message: { id, role, content } }: ChatMessageProps) {
   const { resolvedTheme } = useTheme()
+  const { userId, regenerateMessage } = useChat()
   const [processedContent, setProcessedContent] = useState<{ thinking: string | null; mainContent: string }>({
     thinking: null,
     mainContent: content
   })
   const [isThinkingOpen, setIsThinkingOpen] = useState(true)
+  const [isCopied, setIsCopied] = useState(false)
+  const [feedback, setFeedback] = useState<'like' | 'dislike' | null>(null)
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
+  const [isRegenerating, setIsRegenerating] = useState(false)
 
   // 根据当前主题选择代码高亮样式
   const codeTheme = resolvedTheme === 'dark' ? oneDark : oneLight
@@ -120,6 +129,78 @@ export function ChatMessage({ message: { role, content } }: ChatMessageProps) {
     }
   }, [content, role])
 
+  // 复制消息内容
+  const copyMessageContent = async () => {
+    try {
+      // 复制主要内容，不包括思考过程
+      await navigator.clipboard.writeText(processedContent.mainContent || content)
+      setIsCopied(true)
+      toast.success('已复制到剪贴板')
+
+      // 3秒后重置复制状态
+      setTimeout(() => {
+        setIsCopied(false)
+      }, 3000)
+    } catch (error) {
+      console.error('复制失败:', error)
+      toast.error('复制失败')
+    }
+  }
+
+  // 提交反馈（点赞/点踩）
+  const handleFeedback = async (rating: 'like' | 'dislike' | null) => {
+    // 如果是用户消息或者正在提交反馈，则不处理
+    if (role === 'user' || isSubmittingFeedback || !userId) return
+
+    // 如果点击的是当前已选择的反馈，则取消反馈
+    const newRating = rating === feedback ? null : rating
+
+    // 提取消息ID（去掉前缀）
+    const messageId = id.replace('-assistant', '')
+
+    setIsSubmittingFeedback(true)
+
+    try {
+      await submitMessageFeedback({
+        messageId,
+        rating: newRating,
+        userId,
+        content: newRating === 'like' ? '有帮助' : newRating === 'dislike' ? '没有帮助' : ''
+      })
+
+      // 更新反馈状态
+      setFeedback(newRating)
+
+      // 显示提示
+      if (newRating === 'like') {
+        toast.success('感谢您的反馈！')
+      } else if (newRating === 'dislike') {
+        toast.success('感谢您的反馈，我们会继续改进')
+      } else {
+        toast.success('已撤销反馈')
+      }
+    } catch (error) {
+      console.error('提交反馈失败:', error)
+      toast.error('提交反馈失败')
+    } finally {
+      setIsSubmittingFeedback(false)
+    }
+  }
+
+  // 重新生成回答
+  const handleRegenerate = async () => {
+    if (isRegenerating || role !== 'assistant') return
+
+    setIsRegenerating(true)
+    try {
+      await regenerateMessage(id)
+    } catch (error) {
+      console.error('重新生成失败:', error)
+    } finally {
+      setIsRegenerating(false)
+    }
+  }
+
   return (
     <div className="flex flex-col items-center w-full max-w-3xl text-sm">
       <div className={cn('flex flex-col w-full mb-2', role === 'user' ? 'items-end' : 'items-start')}>
@@ -132,25 +213,67 @@ export function ChatMessage({ message: { role, content } }: ChatMessageProps) {
           <div
             className={cn(
               'opacity-0 group-hover:opacity-100 absolute transition-all',
-              role === 'user' ? '-left-16 top-2' : 'left-12 -bottom-6'
+              role === 'user' ? '-left-8 top-2' : 'left-12 -bottom-6'
             )}
           >
             <div className="flex items-center opacity-70 gap-2">
               {role === 'user' ? (
                 <div className="flex items-center gap-2">
-                  <CopyIcon className="w-6 h-6 cursor-pointer rounded-sm hover:bg-primary/20 p-1 duration-200 transition-all" />
-                  <PencilIcon className="w-6 h-6 cursor-pointer rounded-sm hover:bg-primary/20 p-1 duration-200 transition-all" />
+                  <button
+                    onClick={copyMessageContent}
+                    className="flex items-center justify-center w-6 h-6 rounded-sm hover:bg-primary/20 p-1 duration-200 transition-all"
+                    title="复制"
+                  >
+                    {isCopied ? <CheckIcon className="w-4 h-4 text-green-500" /> : <CopyIcon className="w-4 h-4" />}
+                  </button>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <CopyIcon className="w-6 h-6 cursor-pointer rounded-sm hover:bg-primary/20 p-1 duration-200 transition-all" />
-                  <RefreshCwIcon className="w-6 h-6 cursor-pointer rounded-sm hover:bg-primary/20 p-1 duration-200 transition-all" />
-                  <ThumbsUpIcon className="w-6 h-6 cursor-pointer rounded-sm hover:bg-primary/20 p-1 duration-200 transition-all" />
-                  <ThumbsDownIcon className="w-6 h-6 cursor-pointer rounded-sm hover:bg-primary/20 p-1 duration-200 transition-all" />
+                  <button
+                    onClick={copyMessageContent}
+                    className="flex items-center justify-center w-6 h-6 rounded-sm hover:bg-primary/20 p-1 duration-200 transition-all"
+                    title="复制"
+                  >
+                    {isCopied ? <CheckIcon className="w-4 h-4 text-green-500" /> : <CopyIcon className="w-4 h-4" />}
+                  </button>
+                  <button
+                    onClick={handleRegenerate}
+                    className={cn(
+                      "flex items-center justify-center w-6 h-6 rounded-sm hover:bg-primary/20 p-1 duration-200 transition-all",
+                      isRegenerating && "animate-spin text-primary"
+                    )}
+                    title="重新生成"
+                    disabled={isRegenerating}
+                  >
+                    <RefreshCwIcon className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleFeedback('like')}
+                    className={cn(
+                      'flex items-center justify-center w-6 h-6 rounded-sm hover:bg-primary/20 p-1 duration-200 transition-all',
+                      feedback === 'like' && 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
+                    )}
+                    title="有帮助"
+                    disabled={isSubmittingFeedback}
+                  >
+                    <ThumbsUpIcon className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleFeedback('dislike')}
+                    className={cn(
+                      'flex items-center justify-center w-6 h-6 rounded-sm hover:bg-primary/20 p-1 duration-200 transition-all',
+                      feedback === 'dislike' && 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                    )}
+                    title="没有帮助"
+                    disabled={isSubmittingFeedback}
+                  >
+                    <ThumbsDownIcon className="w-4 h-4" />
+                  </button>
                 </div>
               )}
             </div>
           </div>
+
           {role === 'user' ? (
             <span className="">
               <Markdown>{content}</Markdown>
@@ -163,29 +286,29 @@ export function ChatMessage({ message: { role, content } }: ChatMessageProps) {
               <span className="ml-3 prose prose-sm dark:prose-invert max-w-none prose-pre:border-0 prose-pre:bg-transparent">
                 {/* 思考过程部分 - 使用 Collapsible 组件 */}
                 {processedContent.thinking && (
-                  <div className='pt-2 px-2 bg-muted/50 rounded-md border border-muted-foreground/20'>
-                  <Collapsible open={isThinkingOpen} onOpenChange={setIsThinkingOpen} className="mb-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm" className="p-0 h-6 hover:bg-transparent">
-                          {isThinkingOpen ? (
-                            <ChevronUpIcon className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <ChevronDownIcon className="h-4 w-4 text-muted-foreground" />
-                          )}
-                          <span className="text-xs text-muted-foreground font-medium">
-                            思考过程 {isThinkingOpen ? '(点击折叠)' : '(点击展开)'}
-                          </span>
-                        </Button>
-                      </CollapsibleTrigger>
-                    </div>
-
-                    <CollapsibleContent>
-                      <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-                        {processedContent.thinking}
+                  <div className="pt-2 px-2 bg-muted/50 rounded-md border border-muted-foreground/20">
+                    <Collapsible open={isThinkingOpen} onOpenChange={setIsThinkingOpen} className="mb-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <CollapsibleTrigger asChild>
+                          <Button variant="ghost" size="sm" className="p-0 h-6 hover:bg-transparent">
+                            {isThinkingOpen ? (
+                              <ChevronUpIcon className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <ChevronDownIcon className="h-4 w-4 text-muted-foreground" />
+                            )}
+                            <span className="text-xs text-muted-foreground font-medium">
+                              思考过程 {isThinkingOpen ? '(点击折叠)' : '(点击展开)'}
+                            </span>
+                          </Button>
+                        </CollapsibleTrigger>
                       </div>
-                    </CollapsibleContent>
-                  </Collapsible>
+
+                      <CollapsibleContent>
+                        <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                          {processedContent.thinking}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </div>
                 )}
 

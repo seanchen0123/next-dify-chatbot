@@ -24,6 +24,8 @@ interface ChatContextType {
   hasMoreMessages: boolean
   generateLoading: boolean
   setGenerateLoading: React.Dispatch<React.SetStateAction<boolean>>
+  answerStarted: boolean
+  setAnswerStarted: React.Dispatch<React.SetStateAction<boolean>>
   loadMoreMessages: (conversationId: string) => Promise<void>
   // 新增会话列表相关状态和方法
   conversations: ApiConversation[]
@@ -36,6 +38,7 @@ interface ChatContextType {
   setCurrentTaskId: (id: string) => void
   sendMessage: (prompt: string) => Promise<void>
   stopGeneration: () => Promise<void>
+  regenerateMessage: (messageId: string) => Promise<void>
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
@@ -49,6 +52,8 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
   const [hasMoreMessages, setHasMoreMessages] = useState(false)
   // 内容生成时的loading状态
   const [generateLoading, setGenerateLoading] = useState(false)
+  // 仅针对回答内容是否生成完毕的标志位
+  const [answerStarted, setAnswerStarted] = useState(false)
 
   // 新增会话列表相关状态
   const [conversations, setConversations] = useState<ApiConversation[]>([])
@@ -200,8 +205,8 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
   function handleMessageEvent(eventData: MessageEvent) {
     const { answer, from_variable_selector, conversation_id } = eventData
     if (from_variable_selector && from_variable_selector[1] === 'text') {
-      setGenerateLoading(false)
       console.log('收到消息:', answer)
+      setAnswerStarted(true)
       // 保存会话ID
       if (conversation_id && !conversationId) {
         setConversationId(conversation_id)
@@ -293,6 +298,7 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
 
             case 'message_end':
               // console.log('消息结束:', eventData)
+              setAnswerStarted(false)
               break
 
             default:
@@ -371,6 +377,46 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
     }
   }
 
+  // 添加重新生成消息的函数
+  const regenerateMessage = async (messageId: string) => {
+    if (!conversationId || isLoading) return
+    
+    // 设置加载状态
+    setGenerateLoading(true)
+    
+    try {
+      // 找到要重新生成的消息的索引
+      const messageIndex = messages.findIndex(msg => msg.id.includes(messageId))
+      if (messageIndex === -1) {
+        throw new Error('找不到要重新生成的消息')
+      }
+      
+      // 获取上一条用户消息
+      let userMessageIndex = messageIndex - 1
+      while (userMessageIndex >= 0) {
+        if (messages[userMessageIndex].role === 'user') {
+          break
+        }
+        userMessageIndex--
+      }
+      
+      if (userMessageIndex < 0) {
+        throw new Error('找不到对应的用户消息')
+      }
+      
+      const userMessage = messages[userMessageIndex]
+      
+      // 不删除原始消息，而是直接重新发送用户消息
+      // 这样会在消息列表末尾添加新的用户消息和助手回复
+      await sendMessage(userMessage.content)
+      
+    } catch (error) {
+      console.error('重新生成消息失败:', error)
+    } finally {
+      setGenerateLoading(false)
+    }
+  }
+
   return (
     <ChatContext.Provider
       value={{
@@ -399,7 +445,10 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
         sendMessage,
         stopGeneration,
         generateLoading,
-        setGenerateLoading
+        answerStarted,
+        setAnswerStarted,
+        setGenerateLoading,
+        regenerateMessage
       }}
     >
       {children}

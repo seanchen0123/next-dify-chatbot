@@ -25,7 +25,8 @@ export function ChatUI({ chatId }: ChatUIProps) {
     messages,
     sendMessage,
     stopGeneration,
-    generateLoading
+    generateLoading,
+    answerStarted
   } = useChat()
 
   // 移除本地的 messages 状态，使用 context 中的
@@ -118,7 +119,8 @@ export function ChatUI({ chatId }: ChatUIProps) {
                   <Skeleton className="h-12 w-2/3" />
                 </div>
               )}
-              {generateLoading && messages.length > 0 && (
+              {/* 修改加载动画的显示逻辑：只在生成中且没有开始回答时显示 */}
+              {generateLoading && messages.length > 0 && !answerStarted && (
                 <div className="px-3 flex items-center space-x-1 text-muted-foreground">
                   <div className="h-1 w-1 animate-bounce rounded-full bg-muted-foreground"></div>
                   <div
