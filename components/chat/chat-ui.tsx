@@ -1,22 +1,16 @@
-"use client"
+'use client'
 
-import { useState, useRef, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { ChatMessage } from "./chat-message"
-import { EmptyScreen } from "./empty-screen"
-import { Message } from "@/types/chat"
-import { getConversation, sendMessage, createConversation } from "@/services/api"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Send, Plus, Search, Sparkles } from "lucide-react"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { ChatMessage } from './chat-message'
+import { EmptyScreen } from './empty-screen'
+import { useChat } from '@/contexts/chat-context'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Send, Plus, Search, Sparkles } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface ChatUIProps {
   chatId?: string
@@ -24,40 +18,31 @@ interface ChatUIProps {
 
 export function ChatUI({ chatId }: ChatUIProps) {
   const router = useRouter()
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState("")
+  const {
+    chatStarted,
+    setConversationId,
+    startNewChat,
+    messages,
+    sendMessage,
+    stopGeneration
+  } = useChat()
+
+  // 移除本地的 messages 状态，使用 context 中的
+  const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // 加载聊天历史或创建新对话
+  // 设置conversationId，这会触发获取历史消息请求
   useEffect(() => {
-    async function loadOrCreateChat() {
-      setIsLoading(true)
-      try {
-        if (chatId) {
-          // 加载现有对话
-          const conversation = await getConversation(chatId)
-          if (conversation) {
-            setMessages(conversation.messages)
-          } else {
-            // 如果对话不存在，重定向到新对话
-            router.push("/chat")
-          }
-        }
-      } catch (error) {
-        console.error("加载对话失败:", error)
-      } finally {
-        setIsLoading(false)
-      }
+    if (chatId) {
+      setConversationId(chatId)
     }
-
-    loadOrCreateChat()
   }, [chatId, router])
 
   // 自动滚动到最新消息
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
   // 自动调整文本框高度
@@ -76,72 +61,46 @@ export function ChatUI({ chatId }: ChatUIProps) {
     }
   }
 
-  // 开始新对话
+  // 检查是否有初始提示
+  useEffect(() => {
+    const initialPrompt = window.sessionStorage.getItem('initialPrompt')
+    if (initialPrompt) {
+      setInput(initialPrompt)
+      window.sessionStorage.removeItem('initialPrompt')
+    }
+  }, [])
+
+  // 开始新对话 - 使用共享逻辑
   const handleStartChat = async (prompt: string) => {
+    await startNewChat(prompt)
+  }
+
+  // 添加停止生成函数
+  const handleStopGeneration = async () => {
+    setIsLoading(true)
     try {
-      const newConversation = await createConversation()
-      router.push(`/chat/${newConversation.id}`)
-      
-      // 设置输入内容，等待路由变化后自动发送
-      setInput(prompt)
-      
-      // 延迟发送消息，确保路由已经变化
-      setTimeout(() => {
-        const textarea = textareaRef.current
-        if (textarea) {
-          const event = new Event('submit', { bubbles: true })
-          textarea.form?.dispatchEvent(event)
-        }
-      }, 100)
+      await stopGeneration()
     } catch (error) {
-      console.error("创建新对话失败:", error)
+      console.error('停止生成失败:', error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
   // 发送消息
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!input.trim() || isLoading) return
-    
-    // 如果没有chatId，创建新对话
-    if (!chatId) {
-      handleStartChat(input)
-      return
-    }
-    
-    const userMessage: Message = {
-      id: `temp-${Date.now()}`,
-      role: "user",
-      content: input,
-      createdAt: new Date(),
-    }
-    
-    setMessages((prev) => [...prev, userMessage])
-    setInput("")
+
     setIsLoading(true)
-    
+
     try {
-      // 调用API发送消息
-      const assistantMessage = await sendMessage(chatId, input)
-      
-      // 更新消息列表，替换临时用户消息ID
-      setMessages((prev) => [
-        ...prev.filter(m => m.id !== userMessage.id),
-        {
-          id: `user-${Date.now()}`,
-          role: "user",
-          content: input,
-          createdAt: new Date(),
-        },
-        assistantMessage
-      ])
-      
-      // 刷新路由以更新侧边栏
-      router.refresh()
+      const prompt = input.trim()
+      setInput('')
+      await sendMessage(prompt)
     } catch (error) {
-      console.error("发送消息失败:", error)
-      // 可以在这里添加错误处理，例如显示错误提示
+      console.error('发送消息失败:', error)
     } finally {
       setIsLoading(false)
     }
@@ -149,14 +108,14 @@ export function ChatUI({ chatId }: ChatUIProps) {
 
   return (
     <div className="flex h-full flex-col">
-      {/* 聊天消息区域 */}
-      {!chatId && !isLoading && messages.length === 0 ? (
-        <EmptyScreen onStartChat={handleStartChat} />
+      {/* 聊天消息区域 - 修改条件判断，使用 context 中的 messages */}
+      {!chatStarted && !isLoading && messages.length === 0 ? (
+        <EmptyScreen onStartChat={handleStartChat}/>
       ) : (
         <>
           <ScrollArea className="flex-1 p-4">
             <div className="mx-auto max-w-3xl space-y-4">
-              {messages.map((message) => (
+              {messages.map(message => (
                 <ChatMessage key={message.id} message={message} />
               ))}
               {isLoading && !messages.length && (
@@ -167,17 +126,23 @@ export function ChatUI({ chatId }: ChatUIProps) {
                 </div>
               )}
               {isLoading && messages.length > 0 && (
-                <div className="flex items-center space-x-2 text-muted-foreground">
-                  <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground"></div>
-                  <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: "0.2s" }}></div>
-                  <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: "0.4s" }}></div>
+                <div className="px-3 flex items-center space-x-1 text-muted-foreground">
+                  <div className="h-1 w-1 animate-bounce rounded-full bg-muted-foreground"></div>
+                  <div
+                    className="h-1 w-1 animate-bounce rounded-full bg-muted-foreground"
+                    style={{ animationDelay: '0.2s' }}
+                  ></div>
+                  <div
+                    className="h-1 w-1 animate-bounce rounded-full bg-muted-foreground"
+                    style={{ animationDelay: '0.4s' }}
+                  ></div>
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
-          
-          {/* 消息输入区域 - 重写部分 */}
+
+          {/* 消息输入区域 - 修改禁用条件 */}
           <div className="border-t p-4">
             <form onSubmit={handleSendMessage} className="mx-auto max-w-3xl">
               <div className="relative flex flex-col rounded-lg border bg-background shadow-sm">
@@ -186,14 +151,14 @@ export function ChatUI({ chatId }: ChatUIProps) {
                   <Textarea
                     ref={textareaRef}
                     value={input}
-                    onChange={(e) => setInput(e.target.value)}
+                    onChange={e => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="输入消息..."
                     className="min-h-[40px] max-h-[200px] resize-none border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    disabled={isLoading || !chatId}
+                    disabled={isLoading}
                   />
                 </div>
-                
+
                 {/* 底部工具栏 */}
                 <div className="flex items-center justify-between border-t px-3 py-1.5">
                   <div className="flex items-center gap-2">
@@ -208,7 +173,7 @@ export function ChatUI({ chatId }: ChatUIProps) {
                         <TooltipContent side="top">新建</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                    
+
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -220,7 +185,7 @@ export function ChatUI({ chatId }: ChatUIProps) {
                         <TooltipContent side="top">搜索</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                    
+
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -233,15 +198,24 @@ export function ChatUI({ chatId }: ChatUIProps) {
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                  
                   <Button
-                    type="submit"
+                    type={isLoading ? 'button' : 'submit'}
                     size="sm"
                     className="rounded-full"
-                    disabled={isLoading || !input.trim() || !chatId}
+                    disabled={!isLoading && !input.trim()}
+                    onClick={isLoading ? handleStopGeneration : undefined}
                   >
-                    <Send className="h-4 w-4 mr-1" />
-                    发送
+                    {isLoading ? (
+                      <>
+                        <span className="h-4 w-4 mr-1 bg-background rounded-full animate-pulse"></span>
+                        停止
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4 mr-1" />
+                        发送
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>

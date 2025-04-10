@@ -1,22 +1,28 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { usePathname } from 'next/navigation'
-import { Menu, ChevronDown } from 'lucide-react'
+import { MessageCirclePlusIcon } from 'lucide-react'
 import { Sidebar } from './sidebar'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { UserAvatar } from '@/components/user-avatar'
+import { useChat } from '@/contexts/chat-context'
 
 import { Button } from '@/components/ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { SidebarProvider, SidebarTrigger } from '../ui/sidebar'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip'
+import { cn } from '@/lib/utils'
 
 interface ChatLayoutProps {
   children: React.ReactNode
 }
 
 export function ChatLayout({ children }: ChatLayoutProps) {
+  const { startNewChat } = useChat()
+  const isMobile = useIsMobile()
+
+  // 创建新对话 - 使用共享逻辑
+  const handleNewChat = async () => {
+    await startNewChat()
+  }
 
   return (
     <SidebarProvider>
@@ -32,6 +38,23 @@ export function ChatLayout({ children }: ChatLayoutProps) {
             <div className=" text-xl text-foreground font-semibold">AI Chatbot</div>
 
             <div className="flex items-center space-x-2">
+              {isMobile && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={handleNewChat}
+                        variant="ghost"
+                        size="icon"
+                        className={cn('h-7 w-7', isMobile ? 'ml-2' : 'ml-0')}
+                      >
+                        <MessageCirclePlusIcon />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">新建对话</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
               <ThemeToggle />
             </div>
           </header>

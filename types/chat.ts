@@ -1,19 +1,16 @@
-export interface Message {
-  id: string;
-  role: "user" | "assistant" | "system";
-  content: string;
-  createdAt: Date;
-}
-
-export interface Conversation {
-  id: string;
-  title: string;
-  messages: Message[];
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export interface User {
   id: string;
   name?: string;
+}
+
+export interface ChatRequest {
+  query: string
+  conversation_id?: string
+  user?: string
+  files?: Array<{
+    type: string
+    transfer_method: string
+    url: string
+  }>
+  inputs?: Record<string, any>
 }
