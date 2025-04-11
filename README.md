@@ -30,15 +30,13 @@
 
 ## 开始使用
 
-首先，运行开发服务器：
+### 环境变量
+参考.env.example文件，创建.env文件，填写相关环境变量。
 
+### 运行开发服务器：
 ```bash
+npm install
+
 npm run dev
-# 或
-yarn dev
-# 或
-pnpm dev
-# 或
-bun dev
 ```
 在浏览器中打开 http://localhost:3000 查看结果。
