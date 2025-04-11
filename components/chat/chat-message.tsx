@@ -35,7 +35,6 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message: { id, role, content } }: ChatMessageProps) {
   const { resolvedTheme } = useTheme()
-  console.log(resolvedTheme)
   const { userId, regenerateMessage } = useChat()
   const [processedContent, setProcessedContent] = useState<{ thinking: string | null; mainContent: string }>({
     thinking: null,

@@ -11,12 +11,15 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Send, Plus, Search, Sparkles, Globe, Globe2, GlobeIcon, Paperclip } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { useApp } from '@/contexts/app-context'
 
 interface ChatUIProps {
   chatId?: string
 }
 
 export function ChatUI({ chatId }: ChatUIProps) {
+  const {appInfo} = useApp()
+  console.log('appInfo', appInfo)
   const router = useRouter()
   const {
     chatStarted,
