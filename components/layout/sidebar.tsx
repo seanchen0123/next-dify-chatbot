@@ -52,10 +52,12 @@ import 'dayjs/locale/zh-cn' // 导入中文语言包
 import relativeTime from 'dayjs/plugin/relativeTime' // 相对时间插件
 import { renameConversation } from '@/services/client/conversations'
 import { ThemeToggle } from '../theme-toggle'
+import { useApp } from '@/contexts/app-context'
 
 // 初始化 dayjs 插件
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
+const year = dayjs().format('YYYY')
 
 interface SidebarProps {}
 
@@ -73,6 +75,9 @@ export function Sidebar({}: SidebarProps) {
   // 从 ChatContext 获取会话列表相关状态和方法
   const { startNewChat, conversations, isLoadingConversations, loadConversations, deleteConversation, userId } =
     useChat()
+
+  const { appInfo } = useApp()
+  const appName = appInfo?.name || ''
 
   // 重命名对话
   const handleRenameConversation = async () => {
@@ -291,11 +296,10 @@ export function Sidebar({}: SidebarProps) {
       </SidebarContent>
 
       <SidebarFooter>
-        {isMobile && (
-          <div className='p-2 text-right'>
-            <ThemeToggle />
-          </div>
-        )}
+        <div className='p-2 flex items-center justify-between'>
+          <p className='text-sm text-muted-foreground opacity-70'>{appName && `© ${appName} ${year}`}</p>
+          {isMobile && <ThemeToggle />}
+        </div>
       </SidebarFooter>
 
       {/* 重命名对话框 */}
