@@ -311,11 +311,12 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
   const sendMessage = async (prompt: string) => {
     if (!prompt.trim() || isLoading) return
 
+    const processedPrompt = prompt.replace(/\n\t/g, ' ').trim()
     setGenerateLoading(true)
     const userMessage: DisplayMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
-      content: prompt,
+      content: processedPrompt,
       createdAt: new Date()
     }
 
@@ -323,7 +324,7 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
     addMessage(userMessage)
 
     const chatRequest: ChatRequest = {
-      query: prompt,
+      query: processedPrompt,
       conversation_id: conversationId || undefined,
       user: userId,
       files: [],

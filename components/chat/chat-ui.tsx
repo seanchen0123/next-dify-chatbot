@@ -94,9 +94,8 @@ export function ChatUI({ chatId }: ChatUIProps) {
     if (!input.trim() || generateLoading) return
 
     try {
-      const prompt = input.replace(/\n\t/g, ' ').trim()
       setInput('')
-      await sendMessage(prompt)
+      await sendMessage(input)
     } catch (error) {
       console.error('发送消息失败:', error)
     }
