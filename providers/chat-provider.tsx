@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { deleteConversation, getConversations } from '@/services/client/conversations'
 import { getFormattedMessages, stopMessageGeneration } from '@/services/client/messages'
 import { ChatRequest } from '@/types/chat'
-import { EventData, MessageEvent, WorkflowFinishedEvent } from '@/types/events'
+import { EventData, MessageEndEvent, MessageEvent, WorkflowFinishedEvent } from '@/types/events'
 import { DisplayMessage } from '@/types/message'
 import { ApiConversation } from '@/types/conversation'
 import { ChatContext } from '@/contexts/chat-context'
@@ -192,6 +192,25 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
     }
   }
 
+  // 处理message_end事件
+  function handleMessageEndEvent(eventData: MessageEndEvent) {
+    // console.log('消息结束:', eventData)
+    setAnswerStarted(false)
+    setMessages((prev) => {
+      const updatedMessages = [...prev]
+      const lastMessage = updatedMessages[updatedMessages.length - 1]
+      
+      if (lastMessage && lastMessage.role === 'assistant') {
+        // 添加引用资源
+        if (eventData.metadata.retriever_resources && eventData.metadata.retriever_resources.length > 0) {
+          lastMessage.retrieverResources = eventData.metadata.retriever_resources
+        }
+      }
+      
+      return updatedMessages
+    })
+  }
+
   async function fetchStreamData(data: ChatRequest) {
     const response = await fetch('/api/chat', {
       method: 'POST',
@@ -272,8 +291,7 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
               break
 
             case 'message_end':
-              // console.log('消息结束:', eventData)
-              setAnswerStarted(false)
+              handleMessageEndEvent(eventData)
               break
 
             default:

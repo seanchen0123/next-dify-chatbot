@@ -1,10 +1,6 @@
-import { formatDistanceToNow } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
 import {
-  User,
   Bot,
   CopyIcon,
-  PencilIcon,
   RefreshCwIcon,
   ThumbsUpIcon,
   ThumbsDownIcon,
@@ -28,13 +24,17 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useChat } from '@/contexts/chat-context'
 import { toast } from 'sonner'
 import { submitMessageFeedback } from '@/services/client/messages'
+import { CitationReferences } from './citation-references'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 interface ChatMessageProps {
   message: DisplayMessage
+  showRetrieverResources?: boolean
 }
 
-export function ChatMessage({ message: { id, role, content } }: ChatMessageProps) {
+export function ChatMessage({ message: { id, role, content, retrieverResources }, showRetrieverResources = false}: ChatMessageProps) {
   const { resolvedTheme } = useTheme()
+  const isMobile = useIsMobile()
   const { userId, regenerateMessage } = useChat()
   const [processedContent, setProcessedContent] = useState<{ thinking: string | null; mainContent: string }>({
     thinking: null,
@@ -207,7 +207,7 @@ export function ChatMessage({ message: { id, role, content } }: ChatMessageProps
         <div
           className={cn(
             'group relative flex max-w-2xl py-2 rounded-xl',
-            role === 'user' ? 'bg-sky-600/10 px-3' : 'bg-background'
+            role === 'user' ? 'bg-sky-600/10 px-3' : 'bg-background w-full'
           )}
         >
           <div
@@ -275,20 +275,20 @@ export function ChatMessage({ message: { id, role, content } }: ChatMessageProps
           </div>
 
           {role === 'user' ? (
-            <span className="">
+            <div className="">
               <Markdown>{content}</Markdown>
-            </span>
+            </div>
           ) : (
-            <div className="flex items-start">
+            <div className="flex items-start w-full gap-3">
               <div className="h-10 w-10 p-1 border-2 border-primary/90 rounded-full shrink-0 flex items-center justify-center bg-primary/10">
                 <Bot className="h-6 w-6 text-primary" />
               </div>
-              <span className="ml-3 prose prose-sm dark:prose-invert max-w-none prose-pre:border-0 prose-pre:bg-transparent">
+              <div className={cn("prose prose-sm dark:prose-invert prose-pre:border-0 prose-pre:bg-transparent w-full flex-1", isMobile ? 'pr-14' : 'pr-0')}>
                 {/* 思考过程部分 - 使用 Collapsible 组件 */}
                 {processedContent.thinking && (
-                  <div className="pt-2 px-2 bg-muted/50 rounded-md border border-muted-foreground/20">
+                  <div className="pt-2 px-2 bg-muted/50 rounded-md border border-muted-foreground/20 w-full">
                     <Collapsible open={isThinkingOpen} onOpenChange={setIsThinkingOpen} className="mb-3">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 w-full">
                         <CollapsibleTrigger asChild>
                           <Button variant="ghost" size="sm" className="p-0 h-6 hover:bg-transparent">
                             {isThinkingOpen ? (
@@ -324,13 +324,14 @@ export function ChatMessage({ message: { id, role, content } }: ChatMessageProps
                         // 如果有language-前缀，说明是代码块，否则是行内代码
                         if (match) {
                           return (
-                            <div className="rounded-md overflow-hidden shadow-sm">
+                            <div className="rounded-md overflow-hidden shadow-sm w-full">
                               <SyntaxHighlighter
                                 style={codeTheme}
                                 language={match[1]}
                                 PreTag="div"
                                 wrapLines={true}
                                 customStyle={{
+                                  width: '100%', // 设置宽度为100%以填充父元素的宽度
                                   margin: 0,
                                   padding: '0.5rem',
                                   borderRadius: '0.5rem',
@@ -356,7 +357,10 @@ export function ChatMessage({ message: { id, role, content } }: ChatMessageProps
                     {processedContent.mainContent}
                   </Markdown>
                 )}
-              </span>
+
+                {/* 引用内容部分 */}
+                {showRetrieverResources && retrieverResources && retrieverResources.length > 0 && <CitationReferences resources={retrieverResources} />}
+              </div>
             </div>
           )}
         </div>

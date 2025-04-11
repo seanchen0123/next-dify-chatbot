@@ -54,12 +54,17 @@ export function formatMessagesToDisplay(messages: Message[]): DisplayMessage[] {
     // 创建助手消息（如果有回答）
     const assistantMessages: DisplayMessage[] = [];
     if (message.answer) {
-      assistantMessages.push({
+      const assistantMessage: DisplayMessage = {
         id: `${message.id}-assistant`,
         role: 'assistant',
         content: message.answer,
         createdAt: new Date(parseInt(message.created_at) * 1000 + 1000) // 助手消息时间稍晚于用户消息
-      });
+      }
+      // 处理引用资源
+      if (message.retriever_resources && message.retriever_resources.length > 0) {
+        assistantMessage.retrieverResources = message.retriever_resources
+      }
+      assistantMessages.push(assistantMessage);
     }
 
     return [userMessage, ...assistantMessages];

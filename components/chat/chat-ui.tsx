@@ -11,12 +11,14 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Send, Sparkles, Globe, Paperclip } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { useApp } from '@/contexts/app-context'
 
 interface ChatUIProps {
   chatId?: string
 }
 
 export function ChatUI({ chatId }: ChatUIProps) {
+  const { appParameters } = useApp()
   const router = useRouter()
   const {
     chatStarted,
@@ -104,13 +106,17 @@ export function ChatUI({ chatId }: ChatUIProps) {
     <div className="flex h-full flex-col">
       {/* 聊天消息区域 - 修改条件判断，使用 context 中的 messages */}
       {!chatStarted && !generateLoading && messages.length === 0 ? (
-        <EmptyScreen onStartChat={handleStartChat}/>
+        <EmptyScreen onStartChat={handleStartChat} />
       ) : (
         <>
           <ScrollArea className="flex-1 p-4">
             <div className="mx-auto max-w-3xl space-y-4">
               {messages.map(message => (
-                <ChatMessage key={message.id} message={message} />
+                <ChatMessage
+                  key={message.id}
+                  message={message}
+                  showRetrieverResources={appParameters?.retriever_resource.enabled}
+                />
               ))}
               {generateLoading && !messages.length && (
                 <div className="space-y-2">
@@ -173,7 +179,7 @@ export function ChatUI({ chatId }: ChatUIProps) {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-full opacity-80">
-                            <Globe className='scale-125'/>
+                            <Globe className="scale-125" />
                             <span className="sr-only">联网搜索</span>
                           </Button>
                         </TooltipTrigger>
@@ -184,7 +190,12 @@ export function ChatUI({ chatId }: ChatUIProps) {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-full  opacity-80">
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 rounded-full  opacity-80"
+                          >
                             <Sparkles className="scale-125" />
                             <span className="sr-only">深度思考</span>
                           </Button>
@@ -215,7 +226,7 @@ export function ChatUI({ chatId }: ChatUIProps) {
                 </div>
               </div>
             </form>
-            <p className='text-xs text-center mt-2 text-muted-foreground opacity-50'>内容由 AI 生成，请仔细甄别</p>
+            <p className="text-xs text-center mt-2 text-muted-foreground opacity-50">内容由 AI 生成，请仔细甄别</p>
           </div>
         </>
       )}

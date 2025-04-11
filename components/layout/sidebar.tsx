@@ -304,7 +304,7 @@ export function Sidebar({}: SidebarProps) {
 
       {/* 重命名对话框 */}
       <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
-        <DialogContent>
+        <DialogContent className='w-[96%] rounded-lg'>
           <DialogHeader>
             <DialogTitle>重命名对话</DialogTitle>
             <DialogDescription>请输入新的对话名称</DialogDescription>
@@ -326,7 +326,7 @@ export function Sidebar({}: SidebarProps) {
 
       {/* 删除确认对话框 */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className='w-[96%] rounded-lg'>
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除</AlertDialogTitle>
             <AlertDialogDescription>您确定要删除这个对话吗？此操作无法撤销。</AlertDialogDescription>

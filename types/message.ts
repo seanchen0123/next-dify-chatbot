@@ -9,11 +9,34 @@ export interface Feedback {
   rating?: 'like' | 'dislike';
 }
 
+// 定义引用资源类型
 export interface RetrieverResource {
-  id: string;
-  content: string;
-  metadata: Record<string, any>;
-  // 其他可能的字段
+  position: number
+  dataset_id: string
+  dataset_name: string
+  document_id: string
+  document_name: string
+  data_source_type: string
+  segment_id: string
+  retriever_from: string
+  score: number
+  hit_count: number
+  word_count: number
+  segment_position: number
+  index_node_hash: string
+  content: string
+  page: number | null
+}
+
+// 修改 DisplayMessage 类型，增加 retrieverResources 属性
+export interface DisplayMessage {
+  id: string
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  createdAt: Date
+  updatedAt?: Date
+  files?: MessageFile[]
+  retrieverResources?: RetrieverResource[] // 新增属性
 }
 
 export interface Message {
@@ -34,13 +57,6 @@ export interface MessagesResponse {
   data: Message[];
   has_more: boolean;
   limit: number;
-}
-
-export interface DisplayMessage {
-  id: string;
-  role: "user" | "assistant" | "system";
-  content: string;
-  createdAt: Date;
 }
 
 export interface GetFormattedMessagesResult {

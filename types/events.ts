@@ -1,3 +1,6 @@
+// 引入 RetrieverResource 类型
+import { RetrieverResource } from './message'
+
 // 定义事件类型
 export interface BaseEvent {
   task_id: string
@@ -26,13 +29,25 @@ export interface MessageFileEvent extends BaseEvent {
 // 消息结束事件
 export interface MessageEndEvent extends BaseEvent {
   event: 'message_end'
-  metadata: Record<string, any>
-  usage: {
-    prompt_tokens: number
-    completion_tokens: number
-    total_tokens: number
+  id?: string
+  metadata: {
+    retriever_resources?: RetrieverResource[]
+    usage: {
+      prompt_tokens: number
+      prompt_unit_price: string
+      prompt_price_unit: string
+      prompt_price: string
+      completion_tokens: number
+      completion_unit_price: string
+      completion_price_unit: string
+      completion_price: string
+      total_tokens: number
+      total_price: string
+      currency: string
+      latency: number
+    }
   }
-  retriever_resources?: Array<any>
+  files?: any[]
 }
 
 // TTS 音频流事件
