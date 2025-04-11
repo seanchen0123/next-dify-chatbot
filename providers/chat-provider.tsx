@@ -180,7 +180,7 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
   function handleMessageEvent(eventData: MessageEvent) {
     const { answer, from_variable_selector, conversation_id } = eventData
     if (from_variable_selector && from_variable_selector[1] === 'text') {
-      console.log('收到消息:', answer)
+      // console.log('收到消息:', answer)
       setAnswerStarted(true)
       // 保存会话ID
       if (conversation_id && !conversationId) {
@@ -287,7 +287,7 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
               break
 
             case 'workflow_finished':
-              console.log('工作流完成:', (eventData as WorkflowFinishedEvent).data?.status)
+              // console.log('工作流完成:', (eventData as WorkflowFinishedEvent).data?.status)
               break
 
             case 'message_end':

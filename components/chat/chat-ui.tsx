@@ -94,7 +94,7 @@ export function ChatUI({ chatId }: ChatUIProps) {
     if (!input.trim() || generateLoading) return
 
     try {
-      const prompt = input.trim()
+      const prompt = input.replace(/\n\t/g, ' ').trim()
       setInput('')
       await sendMessage(prompt)
     } catch (error) {

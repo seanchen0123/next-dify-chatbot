@@ -206,7 +206,7 @@ export function ChatMessage({ message: { id, role, content, retrieverResources }
       <div className={cn('flex flex-col w-full mb-2', role === 'user' ? 'items-end' : 'items-start')}>
         <div
           className={cn(
-            'group relative flex max-w-2xl py-2 rounded-xl',
+            'group relative flex py-2 rounded-xl',
             role === 'user' ? 'bg-sky-600/10 px-3' : 'bg-background w-full'
           )}
         >
@@ -275,7 +275,7 @@ export function ChatMessage({ message: { id, role, content, retrieverResources }
           </div>
 
           {role === 'user' ? (
-            <div className="">
+            <div className="max-w-prose">
               <Markdown>{content}</Markdown>
             </div>
           ) : (
@@ -283,7 +283,7 @@ export function ChatMessage({ message: { id, role, content, retrieverResources }
               <div className="h-10 w-10 p-1 border-2 border-primary/90 rounded-full shrink-0 flex items-center justify-center bg-primary/10">
                 <Bot className="h-6 w-6 text-primary" />
               </div>
-              <div className={cn("prose prose-sm dark:prose-invert prose-pre:border-0 prose-pre:bg-transparent w-full flex-1", isMobile ? 'pr-14' : 'pr-0')}>
+              <div className={cn("prose prose-sm dark:prose-invert prose-pre:border-0 prose-pre:bg-transparent", isMobile ? 'pr-14' : 'pr-0')}>
                 {/* 思考过程部分 - 使用 Collapsible 组件 */}
                 {processedContent.thinking && (
                   <div className="pt-2 px-2 bg-muted/50 rounded-md border border-muted-foreground/20 w-full">
