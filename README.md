@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Next-Chatbot
 
-## Getting Started
+这是一个借助Trae AI编辑器实现的聊天页面，主要功能是对接Dify Chat Workflow API。
 
-First, run the development server:
+## 技术栈
+- Next.js 14
+- Tailwind CSS v3
+- TypeScript
+- Shadcn UI
+
+## 功能列表
+
+### 已实现功能
+- ✅ 发送对话消息
+- ✅ 停止响应
+- ✅ 消息反馈（点赞）
+- ✅ 获取会话历史消息
+- ✅ 获取会话列表
+- ✅ 删除会话
+- ✅ 会话重命名
+
+### 待实现功能
+- 🚧 上传文件
+- 🚧 获取下一轮建议问题列表
+- 🚧 语音转文字
+- 🚧 文字转语音
+- 🚧 获取应用基本信息
+- 🚧 获取应用参数
+- 🚧 获取应用Meta信息
+
+## 开始使用
+
+首先，运行开发服务器：
 
 ```bash
 npm run dev
-# or
+# 或
 yarn dev
-# or
+# 或
 pnpm dev
-# or
+# 或
 bun dev
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+在浏览器中打开 http://localhost:3000 查看结果。
