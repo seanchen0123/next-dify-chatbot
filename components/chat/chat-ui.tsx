@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Send, Plus, Search, Sparkles } from 'lucide-react'
+import { Send, Plus, Search, Sparkles, Globe, Globe2, GlobeIcon, Paperclip } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface ChatUIProps {
@@ -138,58 +138,58 @@ export function ChatUI({ chatId }: ChatUIProps) {
           </ScrollArea>
 
           {/* 消息输入区域 - 修改禁用条件 */}
-          <div className="border-t p-4">
+          <div className="p-4 pt-0">
             <form onSubmit={handleSendMessage} className="mx-auto max-w-3xl">
-              <div className="relative flex flex-col rounded-lg border bg-background shadow-sm">
+              <div className="relative flex flex-col rounded-xl border bg-background shadow-sm">
                 {/* 输入框 */}
-                <div className="relative flex items-end p-2">
+                <div className="relative flex items-end p-3">
                   <Textarea
                     ref={textareaRef}
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="输入消息..."
-                    className="min-h-[40px] max-h-[200px] resize-none border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className="min-h-[40px] max-h-[140px] resize-none border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                     disabled={generateLoading}
                   />
                 </div>
 
                 {/* 底部工具栏 */}
-                <div className="flex items-center justify-between border-t px-3 py-1.5">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between px-3 py-1.5">
+                  <div className="flex items-center gap-3">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-full">
-                            <Plus className="h-4 w-4" />
-                            <span className="sr-only">新建</span>
+                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-full opacity-80">
+                            <Paperclip className="scale-125" />
+                            <span className="sr-only">上传附件</span>
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent side="top">新建</TooltipContent>
+                        <TooltipContent side="top">上传附件</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
 
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-full">
-                            <Search className="h-4 w-4" />
-                            <span className="sr-only">搜索</span>
+                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-full opacity-80">
+                            <Globe className='scale-125'/>
+                            <span className="sr-only">联网搜索</span>
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent side="top">搜索</TooltipContent>
+                        <TooltipContent side="top">联网搜索</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
 
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-full">
-                            <Sparkles className="h-4 w-4" />
-                            <span className="sr-only">推理</span>
+                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-full  opacity-80">
+                            <Sparkles className="scale-125" />
+                            <span className="sr-only">深度思考</span>
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent side="top">推理</TooltipContent>
+                        <TooltipContent side="top">深度思考</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
@@ -215,6 +215,7 @@ export function ChatUI({ chatId }: ChatUIProps) {
                 </div>
               </div>
             </form>
+            <p className='text-xs text-center mt-2 text-muted-foreground opacity-50'>内容由 AI 生成，请仔细甄别</p>
           </div>
         </>
       )}

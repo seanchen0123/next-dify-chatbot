@@ -29,6 +29,7 @@ interface ChatContextType {
   loadMoreMessages: (conversationId: string) => Promise<void>
   // 新增会话列表相关状态和方法
   conversations: ApiConversation[]
+  currentConversation: ApiConversation | null
   isLoadingConversations: boolean
   loadConversations: () => Promise<void>
   deleteConversation: (id: string) => Promise<void>
@@ -58,6 +59,8 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
   // 新增会话列表相关状态
   const [conversations, setConversations] = useState<ApiConversation[]>([])
   const [isLoadingConversations, setIsLoadingConversations] = useState(true)
+  // 当前的会话信息
+  const [currentConversation, setCurrentConversation] = useState<ApiConversation | null>(null)
 
   // 计算整体加载状态
   const isLoading = isLoadingMessages || isLoadingConversations
@@ -110,6 +113,12 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
       setChatStarted(true)
     }
   }, [conversationId, userId])
+
+  // 获取当前的会话
+  useEffect(() => {
+    const conversation = conversations.find(c => c.id === conversationId)
+    setCurrentConversation(conversation || null)
+  }, [conversationId, setConversationId, conversations, setConversations])
 
   // 统一的开始新对话逻辑
   const startNewChat = async (initialPrompt?: string) => {
@@ -435,6 +444,7 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
         loadMoreMessages,
         // 新增会话列表相关状态和方法
         conversations,
+        currentConversation,
         isLoadingConversations,
         loadConversations,
         deleteConversation: handleDeleteConversation,

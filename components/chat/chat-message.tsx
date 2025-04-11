@@ -19,8 +19,8 @@ import { Button } from '../ui/button'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'
-import { oneLight } from 'react-syntax-highlighter/dist/cjs/styles/prism'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism'
+import { materialLight } from 'react-syntax-highlighter/dist/cjs/styles/prism'
 import { useRef, useState, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { DisplayMessage } from '@/types/message'
@@ -35,6 +35,7 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message: { id, role, content } }: ChatMessageProps) {
   const { resolvedTheme } = useTheme()
+  console.log(resolvedTheme)
   const { userId, regenerateMessage } = useChat()
   const [processedContent, setProcessedContent] = useState<{ thinking: string | null; mainContent: string }>({
     thinking: null,
@@ -47,7 +48,7 @@ export function ChatMessage({ message: { id, role, content } }: ChatMessageProps
   const [isRegenerating, setIsRegenerating] = useState(false)
 
   // 根据当前主题选择代码高亮样式
-  const codeTheme = resolvedTheme === 'dark' ? oneDark : oneLight
+  const codeTheme = resolvedTheme === 'dark' ? vscDarkPlus : materialLight
 
   // 处理思考过程内容
   useEffect(() => {
@@ -324,7 +325,7 @@ export function ChatMessage({ message: { id, role, content } }: ChatMessageProps
                         // 如果有language-前缀，说明是代码块，否则是行内代码
                         if (match) {
                           return (
-                            <div className="rounded-md my-2 overflow-hidden shadow-sm">
+                            <div className="rounded-md overflow-hidden shadow-sm">
                               <SyntaxHighlighter
                                 style={codeTheme}
                                 language={match[1]}
@@ -332,8 +333,8 @@ export function ChatMessage({ message: { id, role, content } }: ChatMessageProps
                                 wrapLines={true}
                                 customStyle={{
                                   margin: 0,
-                                  borderRadius: '0.375rem',
-                                  border: 'none'
+                                  padding: '0.5rem',
+                                  borderRadius: '0.5rem',
                                 }}
                               >
                                 {String(children).replace(/\n$/, '')}

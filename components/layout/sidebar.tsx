@@ -51,6 +51,7 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn' // 导入中文语言包
 import relativeTime from 'dayjs/plugin/relativeTime' // 相对时间插件
 import { renameConversation } from '@/services/client/conversations'
+import { ThemeToggle } from '../theme-toggle'
 
 // 初始化 dayjs 插件
 dayjs.extend(relativeTime)
@@ -177,16 +178,16 @@ export function Sidebar({}: SidebarProps) {
 
   return (
     <ShadcnSidebar>
-      <SidebarHeader className="h-14 border-b">
+      <SidebarHeader className="h-14">
         <div className="flex items-center justify-between w-full h-full">
           {isMobile && <SidebarTrigger />}
 
           <div className="flex-1 flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={handleSearch} className="h-7 w-7">
-              <Search />
+              <Search className="scale-125" />
             </Button>
             {isSearching && (
-              <div className="border-b">
+              <div className="flex-1">
                 <Input
                   type="text"
                   value={searchQuery}
@@ -201,7 +202,7 @@ export function Sidebar({}: SidebarProps) {
       </SidebarHeader>
 
       <SidebarContent>
-        <div className="px-2 mt-4">
+        <div className="px-2 mt-2">
           <Button
             variant="outline"
             className="w-full bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 flex items-center justify-center gap-2 py-4"
@@ -289,7 +290,13 @@ export function Sidebar({}: SidebarProps) {
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter></SidebarFooter>
+      <SidebarFooter>
+        {isMobile && (
+          <div className='p-2 text-right'>
+            <ThemeToggle />
+          </div>
+        )}
+      </SidebarFooter>
 
       {/* 重命名对话框 */}
       <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>

@@ -16,13 +16,15 @@ interface ChatLayoutProps {
 }
 
 export function ChatLayout({ children }: ChatLayoutProps) {
-  const { startNewChat } = useChat()
+  const { startNewChat, currentConversation } = useChat()
   const isMobile = useIsMobile()
 
   // 创建新对话 - 使用共享逻辑
   const handleNewChat = async () => {
     await startNewChat()
   }
+
+  const title = currentConversation ? currentConversation.name : 'New Chat'
 
   return (
     <SidebarProvider>
@@ -32,10 +34,10 @@ export function ChatLayout({ children }: ChatLayoutProps) {
         {/* 主内容区 */}
         <div className="flex flex-1 flex-col overflow-hidden transition-all duration-300 ease-in-out">
           {/* 顶部导航栏 */}
-          <header className="flex h-14 items-center justify-between border-b px-4">
+          <header className="flex h-14 items-center justify-between px-4 shadow-sm">
             <SidebarTrigger />
 
-            <div className=" text-xl text-foreground font-semibold">AI Chatbot</div>
+            <div className="pl-2 text-lg text-foreground font-semibold overflow-hidden whitespace-nowrap text-ellipsis">{title}</div>
 
             <div className="flex items-center space-x-2">
               {isMobile && (
@@ -48,14 +50,14 @@ export function ChatLayout({ children }: ChatLayoutProps) {
                         size="icon"
                         className={cn('h-7 w-7', isMobile ? 'ml-2' : 'ml-0')}
                       >
-                        <MessageCirclePlusIcon />
+                        <MessageCirclePlusIcon className='scale-125' />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="right">新建对话</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               )}
-              <ThemeToggle />
+              {!isMobile && <ThemeToggle />}
             </div>
           </header>
 

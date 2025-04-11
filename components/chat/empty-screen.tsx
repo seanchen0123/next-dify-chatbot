@@ -59,7 +59,7 @@ export function EmptyScreen({ onStartChat }: EmptyScreenProps) {
         className="mt-6 py-4 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 flex items-center justify-center gap-2"
         onClick={() => onStartChat('')}
       >
-        <MessageCirclePlus className="h-4 w-4" />
+        <MessageCirclePlus />
         <span className="font-medium">开始聊天</span>
       </Button>
     </div>
