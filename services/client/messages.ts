@@ -1,7 +1,7 @@
 import api from '@/lib/api'
 import { Message, MessagesResponse, GetFormattedMessagesResult } from '@/types/message'
 import { formatMessagesToDisplay, sortMessagesByTime } from '@/lib/utils'
-import { GetMessagesParams, StopMessageParams, SubmitMessageFeedbackParams } from '../types/common'
+import { GetMessagesParams, GetNextRoundSuggestionsParams, StopMessageParams, SubmitMessageFeedbackParams } from '../types/common'
 
 // 获取会话历史消息（原始格式）
 export async function getMessages(params: GetMessagesParams): Promise<Message[]> {
@@ -81,6 +81,20 @@ export async function stopMessageGeneration(params: StopMessageParams): Promise<
     })
   } catch (error) {
     console.error('停止消息生成失败:', error)
+    throw error
+  }
+}
+
+// 获取下一轮建议问题列表
+export async function getNextRoundSuggestions(params: GetNextRoundSuggestionsParams): Promise<string[]> {
+  const { messageId, userId } = params
+  try {
+    const response = await api.post(`/messages/${messageId}/suggested`, {
+      userId
+    })
+    return response.data.data
+  } catch (error) {
+    console.error('获取下一轮建议问题列表失败:', error)
     throw error
   }
 }

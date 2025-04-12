@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChatMessage } from './chat-message'
-import { EmptyScreen } from './empty-screen'
 import { useChat } from '@/contexts/chat-context'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -12,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Send, Sparkles, Globe, Paperclip } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useApp } from '@/contexts/app-context'
+import EmptySkeletonWithId from './empty-skeleton-with-id'
 
 interface ChatUIProps {
   chatId?: string
@@ -23,12 +23,13 @@ export function ChatUI({ chatId }: ChatUIProps) {
   const {
     chatStarted,
     setConversationId,
-    startNewChat,
     messages,
     sendMessage,
+    isLoadingMessages,
+    setGenerateLoading,
     stopGeneration,
     generateLoading,
-    answerStarted
+    answerStarted,
   } = useChat()
 
   // 移除本地的 messages 状态，使用 context 中的
@@ -73,11 +74,6 @@ export function ChatUI({ chatId }: ChatUIProps) {
     }
   }, [])
 
-  // 开始新对话 - 使用共享逻辑
-  const handleStartChat = async (prompt: string) => {
-    await startNewChat(prompt)
-  }
-
   // 添加停止生成函数
   const handleStopGeneration = async () => {
     try {
@@ -104,8 +100,8 @@ export function ChatUI({ chatId }: ChatUIProps) {
   return (
     <div className="flex h-full flex-col">
       {/* 聊天消息区域 - 修改条件判断，使用 context 中的 messages */}
-      {!chatStarted && !generateLoading && messages.length === 0 ? (
-        <EmptyScreen onStartChat={handleStartChat} />
+      {(chatId && !generateLoading && isLoadingMessages) ? (
+        <EmptySkeletonWithId />
       ) : (
         <>
           <ScrollArea className="flex-1 p-4">
@@ -117,13 +113,6 @@ export function ChatUI({ chatId }: ChatUIProps) {
                   showRetrieverResources={appParameters?.retriever_resource.enabled}
                 />
               ))}
-              {generateLoading && !messages.length && (
-                <div className="space-y-2">
-                  <Skeleton className="h-12 w-3/4" />
-                  <Skeleton className="h-12 w-1/2" />
-                  <Skeleton className="h-12 w-2/3" />
-                </div>
-              )}
               {/* 修改加载动画的显示逻辑：只在生成中且没有开始回答时显示 */}
               {generateLoading && messages.length > 0 && !answerStarted && (
                 <div className="px-3 flex items-center space-x-1 text-muted-foreground">

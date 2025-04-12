@@ -43,6 +43,11 @@ export interface SubmitMessageFeedbackParams {
   content?: string
 }
 
+export interface GetNextRoundSuggestionsParams {
+  messageId: string
+  userId: string
+}
+
 // 新增应用信息响应类型
 export interface AppInfoResponse {
   name: string

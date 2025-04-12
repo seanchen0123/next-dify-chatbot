@@ -1,6 +1,6 @@
 import serverClient from '@/lib/server-client'
 import { MessagesResponse } from '@/types/message'
-import { GetMessagesParams, StopMessageParams, SubmitMessageFeedbackParams } from '../types/common'
+import { GetMessagesParams, GetNextRoundSuggestionsParams, StopMessageParams, SubmitMessageFeedbackParams } from '../types/common'
 
 // 获取会话历史消息
 export async function getMessages(params: GetMessagesParams): Promise<MessagesResponse> {
@@ -39,8 +39,6 @@ export async function stopMessageGeneration(params: StopMessageParams): Promise<
   }
 }
 
-// 在现有文件中添加以下函数
-
 // 提交消息反馈（点赞/点踩）
 export async function submitMessageFeedback(params: SubmitMessageFeedbackParams): Promise<void> {
   const { messageId, rating, userId, content } = params
@@ -52,6 +50,22 @@ export async function submitMessageFeedback(params: SubmitMessageFeedbackParams)
     })
   } catch (error) {
     console.error('提交消息反馈失败:', error)
+    throw error
+  }
+}
+
+// 获取下一轮建议问题列表
+export async function getNextRoundSuggestions(params: GetNextRoundSuggestionsParams): Promise<string[]> {
+  const { messageId, userId } = params
+  try {
+    const response = await serverClient.get(`/messages/${messageId}/suggested`, {
+      params: {
+        user: userId
+      }
+    })
+    return response.data
+  } catch (error) {
+    console.error('获取下一轮建议问题列表失败:', error)
     throw error
   }
 }

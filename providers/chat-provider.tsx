@@ -3,7 +3,7 @@
 import { useState, ReactNode, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { deleteConversation, getConversations } from '@/services/client/conversations'
-import { getFormattedMessages, stopMessageGeneration } from '@/services/client/messages'
+import { getFormattedMessages, getNextRoundSuggestions, stopMessageGeneration } from '@/services/client/messages'
 import { ChatRequest } from '@/types/chat'
 import { EventData, MessageEndEvent, MessageEvent, WorkflowFinishedEvent } from '@/types/events'
 import { DisplayMessage } from '@/types/message'
@@ -33,6 +33,9 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
 
   // taskId用于停止当前正在输出的消息
   const [currentTaskId, setCurrentTaskId] = useState<string>('')
+
+  // 下轮问题建议问题列表
+  const [suggestions, setSuggestions] = useState<string[]>([])
 
   // 加载会话列表
   const loadConversations = async () => {
@@ -74,10 +77,15 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
 
   // 监听 conversationId 变化，加载历史消息
   useEffect(() => {
-    if (conversationId && userId) {
-      loadMessages(conversationId, userId)
-      setChatStarted(true)
+    const init = async () =>{
+      if (conversationId && userId) {
+        await loadMessages(conversationId, userId)
+        setChatStarted(true)
+      } else {
+        setMessages([])
+      }
     }
+    init()
   }, [conversationId, userId])
 
   // 获取当前的会话
@@ -178,10 +186,10 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
 
   // 专门处理message事件 - 增量累加模式
   function handleMessageEvent(eventData: MessageEvent) {
+    setAnswerStarted(true)
     const { answer, from_variable_selector, conversation_id } = eventData
     if (from_variable_selector && from_variable_selector[1] === 'text') {
-      // console.log('收到消息:', answer)
-      setAnswerStarted(true)
+      console.log('收到消息:', answer)
       // 保存会话ID
       if (conversation_id && !conversationId) {
         setConversationId(conversation_id)
@@ -209,6 +217,7 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
       
       return updatedMessages
     })
+    
   }
 
   async function fetchStreamData(data: ChatRequest) {
@@ -287,7 +296,8 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
               break
 
             case 'workflow_finished':
-              // console.log('工作流完成:', (eventData as WorkflowFinishedEvent).data?.status)
+              console.log('工作流完成:', (eventData as WorkflowFinishedEvent).data?.status)
+              setGenerateLoading(false)
               break
 
             case 'message_end':
@@ -310,9 +320,8 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
 
   const sendMessage = async (prompt: string) => {
     if (!prompt.trim() || isLoading) return
-
-    const processedPrompt = prompt.replace(/\n\t/g, ' ').trim()
     setGenerateLoading(true)
+    const processedPrompt = prompt.replace(/\n\t/g, ' ').trim()
     const userMessage: DisplayMessage = {
       id: `user-${Date.now()}`,
       role: 'user',

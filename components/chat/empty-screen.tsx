@@ -1,21 +1,12 @@
-'use client'
-
 import { Bot, MessageCirclePlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
-import { useChat } from '@/contexts/chat-context'
-import { usePathname } from 'next/navigation'
-import EmptySkeletonWithId from './empty-skeleton-with-id'
-import EmptySkeleton from './empty-skeleton'
 
 interface EmptyScreenProps {
   onStartChat: (prompt: string) => void
 }
 
 export function EmptyScreen({ onStartChat }: EmptyScreenProps) {
-  const { isLoading } = useChat()
-  const pathname = usePathname()
-  const hasId = pathname.split('/').length > 2
 
   const examplePrompts = [
     '解释量子计算的基本原理',
@@ -23,17 +14,6 @@ export function EmptyScreen({ onStartChat }: EmptyScreenProps) {
     '如何提高英语口语水平？',
     '写一个关于未来科技的短篇故事'
   ]
-
-  // 如果正在加载，显示加载状态
-  if (isLoading) {
-    if (hasId) {
-      return (
-        <EmptySkeletonWithId />
-      )
-    } else {
-      return <EmptySkeleton />
-    }
-  }
 
   return (
     <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center px-4">

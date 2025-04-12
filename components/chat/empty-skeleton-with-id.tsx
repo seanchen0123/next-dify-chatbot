@@ -18,7 +18,7 @@ const EmptySkeletonWithId = () => {
           }
         })}
       </div>
-      <div className="w-full h-[140px] border-t p-4">
+      <div className="w-full h-[140px] p-4 mb-4">
         <div className="w-full h-full max-w-3xl mx-auto">
           <Skeleton className="h-full w-full" />
         </div>
