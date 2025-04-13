@@ -103,7 +103,7 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
 
     // 如果是从布局中调用，需要导航到/chat
     if (window.location.pathname !== '/chat') {
-      router.push(`/chat?userId=${userId}`)
+      router.replace(`/chat?userId=${userId}`)
     }
 
     // 通过URL参数传递初始提示(如果有)
@@ -347,10 +347,8 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
       if (!conversationId && newConversationId) {
         // 更新状态
         setConversationId(newConversationId)
-
-        // 使用 window.history.replaceState 更新 URL 而不刷新页面
-        const newUrl = `/chat/${newConversationId}?userId=${userId}`
-        window.history.replaceState({ path: newUrl }, '', newUrl)
+        // 使用 router.replace 更新 URL，不会刷新当前页面
+        router.replace(`/chat/${newConversationId}?userId=${userId}`)
         // 刷新一下会话列表
         await loadConversations()
       }
