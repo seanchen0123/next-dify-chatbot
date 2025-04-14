@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { Message, DisplayMessage } from '@/types/message';
+import { Message, DisplayMessage, MessageFile } from '@/types/message';
 
 
 export function cn(...inputs: ClassValue[]) {
@@ -44,11 +44,23 @@ export async function processStream(
 export function formatMessagesToDisplay(messages: Message[]): DisplayMessage[] {
   return messages.map(message => {
     // 创建用户消息
+    let userFiles: MessageFile[] = []
+    let assistantFiles: MessageFile[] = []
+    if (message.message_files && message.message_files.length > 0) {
+      message.message_files.forEach(file => {
+        if (file.belongs_to === 'user') {
+          userFiles.push(file)
+        } else {
+          assistantFiles.push(file)
+        }
+      })
+    }
     const userMessage: DisplayMessage = {
       id: `${message.id}-user`,
       role: 'user',
       content: message.query,
-      createdAt: new Date(parseInt(message.created_at) * 1000)
+      createdAt: new Date(parseInt(message.created_at) * 1000),
+      files: userFiles
     };
 
     // 创建助手消息（如果有回答）
@@ -58,7 +70,8 @@ export function formatMessagesToDisplay(messages: Message[]): DisplayMessage[] {
         id: `${message.id}-assistant`,
         role: 'assistant',
         content: message.answer,
-        createdAt: new Date(parseInt(message.created_at) * 1000 + 1000) // 助手消息时间稍晚于用户消息
+        createdAt: new Date(parseInt(message.created_at) * 1000 + 1000), // 助手消息时间稍晚于用户消息
+        files: assistantFiles
       }
       // 处理引用资源
       if (message.retriever_resources && message.retriever_resources.length > 0) {

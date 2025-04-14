@@ -4,15 +4,18 @@ import { useState, ReactNode, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { deleteConversation, getConversations } from '@/services/client/conversations'
 import { getFormattedMessages, getNextRoundSuggestions, stopMessageGeneration } from '@/services/client/messages'
-import { ChatRequest } from '@/types/chat'
+import { ChatRequest, UploadFileItem } from '@/types/chat'
 import { EventData, MessageEndEvent, MessageEvent, WorkflowFinishedEvent } from '@/types/events'
-import { DisplayMessage } from '@/types/message'
+import { DisplayMessage, MessageFile } from '@/types/message'
 import { ApiConversation } from '@/types/conversation'
 import { ChatContext } from '@/contexts/chat-context'
 import { useApp } from '@/contexts/app-context'
-import { nanoid } from 'nanoid';
+import { nanoid } from 'nanoid'
+import { UploadedFileResponse } from '@/services/types/common'
+import { fileToBase64, uploadFile } from '@/services/client/files'
+import { getFileTypeFromExtension } from '@/lib/file-utils'
 
-export function ChatProvider({ userId, children }: { userId: string, children: ReactNode }) {
+export function ChatProvider({ userId, children }: { userId: string; children: ReactNode }) {
   const router = useRouter()
   const { appParameters } = useApp()
   const [conversationId, setConversationId] = useState('')
@@ -39,6 +42,10 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
 
   // 下轮问题建议问题列表
   const [suggestionQuestions, setSuggestionQuestions] = useState<string[]>([])
+
+  // 文件上传
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFileResponse[]>([])
+  const [uploadingFiles, setUploadingFiles] = useState(false)
 
   // 加载会话列表
   const loadConversations = async () => {
@@ -80,7 +87,7 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
 
   // 监听 conversationId 变化，加载历史消息
   useEffect(() => {
-    const init = async () =>{
+    const init = async () => {
       if (conversationId && userId) {
         await loadMessages(conversationId, userId)
         setChatStarted(true)
@@ -198,7 +205,6 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
         setConversationId(conversation_id)
       }
 
-      // 使用 context 中的 updateLastMessage 函数
       updateLastMessage(answer, message_id)
     }
   }
@@ -207,26 +213,25 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
   function handleMessageEndEvent(eventData: MessageEndEvent) {
     // console.log('消息结束:', eventData)
     setAnswerStarted(false)
-    setMessages((prev) => {
+    setMessages(prev => {
       const updatedMessages = [...prev]
       const lastMessage = updatedMessages[updatedMessages.length - 1]
-      
+
       if (lastMessage && lastMessage.role === 'assistant') {
         // 添加引用资源
         if (eventData.metadata.retriever_resources && eventData.metadata.retriever_resources.length > 0) {
           lastMessage.retrieverResources = eventData.metadata.retriever_resources
         }
-        // 添加下一轮问题建议
-        if (appParameters?.suggested_questions_after_answer.enabled) {
-          getNextRoundSuggestions({messageId: lastMessage.id.replace('assistant-', ''), userId}).then(res => {
-            setSuggestionQuestions(res)
-          })
-        }
       }
-      
+      // 添加下一轮问题建议
+      if (appParameters?.suggested_questions_after_answer.enabled) {
+        getNextRoundSuggestions({ messageId: lastMessage.id.replace('assistant-', ''), userId }).then(res => {
+          setSuggestionQuestions(res)
+        })
+      }
+
       return updatedMessages
     })
-    
   }
 
   async function fetchStreamData(data: ChatRequest) {
@@ -331,25 +336,58 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
     if (!prompt.trim() || isLoading) return
     setGenerateLoading(true)
     const processedPrompt = prompt.replace(/\n\t/g, ' ').trim()
+    let messageFiles: MessageFile[] = []
+    if (uploadedFiles.length > 0) {
+      // 构建消息列表中的文件列表
+      messageFiles = uploadedFiles.map(file => {
+        const type = getFileTypeFromExtension(file.extension)
+        return {
+          id: file.id,
+          type,
+          mime_type: file.mime_type,
+          filename: file.name,
+          size: file.size,
+          transfer_method: 'local_file',
+          belongs_to: 'user',
+          url: file.url || ''
+        }
+      })
+    }
     const userMessage: DisplayMessage = {
       id: `user-${nanoid().replace('-', '')}`,
       role: 'user',
       content: processedPrompt,
-      createdAt: new Date()
+      createdAt: new Date(),
+      files: messageFiles
     }
 
-    // 使用 context 中的 addMessage 函数
     addMessage(userMessage)
+
+    // 格式化上传的文件列表
+    let formattedFiles: UploadFileItem[] = []
+    if (uploadedFiles.length > 0) {
+      formattedFiles = uploadedFiles.map(file => {
+        const type = getFileTypeFromExtension(file.extension)
+
+        return {
+          type,
+          transfer_method: 'local_file',
+          upload_file_id: file.id
+        }
+      })
+    }
 
     const chatRequest: ChatRequest = {
       query: processedPrompt,
       conversation_id: conversationId || undefined,
       user: userId,
-      files: [],
+      files: formattedFiles,
       inputs: {}
     }
 
     try {
+      // 清空已上传文件列表
+      clearUploadedFiles()
       const { conversationId: newConversationId } = await fetchStreamData(chatRequest)
 
       // 如果是新对话，更新URL（可选）
@@ -390,17 +428,17 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
   // 添加重新生成消息的函数
   const regenerateMessage = async (messageId: string) => {
     if (!conversationId || isLoading) return
-    
+
     // 设置加载状态
     setGenerateLoading(true)
-    
+
     try {
       // 找到要重新生成的消息的索引
       const messageIndex = messages.findIndex(msg => msg.id.includes(messageId))
       if (messageIndex === -1) {
         throw new Error('找不到要重新生成的消息')
       }
-      
+
       // 获取上一条用户消息
       let userMessageIndex = messageIndex - 1
       while (userMessageIndex >= 0) {
@@ -409,22 +447,60 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
         }
         userMessageIndex--
       }
-      
+
       if (userMessageIndex < 0) {
         throw new Error('找不到对应的用户消息')
       }
-      
+
       const userMessage = messages[userMessageIndex]
-      
+
       // 不删除原始消息，而是直接重新发送用户消息
       // 这样会在消息列表末尾添加新的用户消息和助手回复
       await sendMessage(userMessage.content)
-      
     } catch (error) {
       console.error('重新生成消息失败:', error)
     } finally {
       setGenerateLoading(false)
     }
+  }
+
+  // 定义一个异步函数，用于处理文件上传
+  const handleUploadFile = async (file: File) => {
+    if (!userId) {
+      throw new Error('用户ID未设置')
+    }
+
+    setUploadingFiles(true)
+    try {
+      const result = await uploadFile({
+        file,
+        userId
+      })
+
+      if (result && result.extension) {
+        if (getFileTypeFromExtension(result.extension) === 'image') {
+          const base64 = await fileToBase64(file)
+          result.url = base64
+        }
+      }
+
+      setUploadedFiles(prev => [...prev, result])
+      return result
+    } catch (error) {
+      console.error('文件上传失败:', error)
+      throw error
+    } finally {
+      setUploadingFiles(false)
+    }
+  }
+
+  const handleRemoveFile = (fileId: string) => {
+    setUploadedFiles(prev => prev.filter(file => file.id !== fileId))
+  }
+
+  // 清除已上传文件
+  const clearUploadedFiles = () => {
+    setUploadedFiles([])
   }
 
   return (
@@ -460,7 +536,12 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
         setAnswerStarted,
         setGenerateLoading,
         regenerateMessage,
-        suggestionQuestions
+        suggestionQuestions,
+        uploadedFiles,
+        uploadingFiles,
+        uploadFile: handleUploadFile,
+        removeFile: handleRemoveFile,
+        clearUploadedFiles
       }}
     >
       {children}

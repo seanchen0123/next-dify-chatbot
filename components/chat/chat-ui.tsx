@@ -12,6 +12,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useApp } from '@/contexts/app-context'
 import EmptySkeletonWithId from './empty-skeleton-with-id'
 import SuggestedQuestions from './suggested-questions'
+import { FileUpload } from './file-upload'
+import { FilePreview } from './file-preview'
+import { cn } from '@/lib/utils'
 
 interface ChatUIProps {
   chatId?: string
@@ -28,7 +31,10 @@ export function ChatUI({ chatId }: ChatUIProps) {
     stopGeneration,
     generateLoading,
     answerStarted,
-    suggestionQuestions
+    suggestionQuestions,
+    uploadedFiles,
+    uploadingFiles,
+    removeFile
   } = useChat()
 
   // 移除本地的 messages 状态，使用 context 中的
@@ -142,14 +148,22 @@ export function ChatUI({ chatId }: ChatUIProps) {
             <form onSubmit={handleSendMessage} className="mx-auto max-w-3xl">
               <div className="relative flex flex-col rounded-xl border bg-background shadow-sm">
                 {/* 输入框 */}
-                <div className="relative flex items-end p-3">
+                <div className="relative p-3">
+                  {/* 已上传文件预览 */}
+                  {uploadedFiles.length > 0 && (
+                    <FilePreview 
+                      files={uploadedFiles} 
+                      disabled={generateLoading || uploadingFiles}
+                      onRemove={removeFile}
+                    />
+                  )}
                   <Textarea
                     ref={textareaRef}
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="输入消息..."
-                    className="min-h-[40px] max-h-[140px] resize-none border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className={cn("min-h-[40px] max-h-[140px] resize-none border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0", uploadedFiles.length > 0 ? 'mt-1' : 'mt-0')}
                     disabled={generateLoading}
                   />
                 </div>
@@ -157,17 +171,7 @@ export function ChatUI({ chatId }: ChatUIProps) {
                 {/* 底部工具栏 */}
                 <div className="flex items-center justify-between px-3 py-1.5">
                   <div className="flex items-center gap-3">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-full opacity-80">
-                            <Paperclip className="scale-125" />
-                            <span className="sr-only">上传附件</span>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">上传附件</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <FileUpload />
 
                     <TooltipProvider>
                       <Tooltip>
@@ -197,6 +201,7 @@ export function ChatUI({ chatId }: ChatUIProps) {
                         <TooltipContent side="top">深度思考</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
+
                   </div>
                   <Button
                     type={generateLoading ? 'button' : 'submit'}

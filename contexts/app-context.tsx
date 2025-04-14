@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext } from 'react'
-import { AppInfoResponse, AppParametersResponse, AppMetaResponse } from '@/services/types/common'
+import { AppInfoResponse, AppParametersResponse, AppMetaResponse, FileUploadConfig } from '@/services/types/common'
 
 interface AppContextType {
   appInfo: AppInfoResponse | null
@@ -9,6 +9,7 @@ interface AppContextType {
   appMeta: AppMetaResponse | null
   isLoading: boolean
   error: Error | null
+  uploadConfig: FileUploadConfig
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined)

@@ -12,7 +12,7 @@ const EmptySkeletonWithId = () => {
             return (
               <div key={i} className="flex w-full items-start space-x-3">
                 <Skeleton className="h-14 w-14 rounded-full shrink-0" />
-                <Skeleton className="h-24 w-1/2" />
+                <Skeleton className="h-20 w-1/2" />
               </div>
             )
           }

@@ -24,6 +24,7 @@ import { toast } from 'sonner'
 import { submitMessageFeedback } from '@/services/client/messages'
 import { CitationReferences } from './citation-references'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { FilePreview } from './file-preview'
 
 interface ChatMessageProps {
   message: DisplayMessage
@@ -32,7 +33,7 @@ interface ChatMessageProps {
   suggestedQuestions?: string[]
 }
 
-export function ChatMessage({ message: { id, role, content, retrieverResources }, showRetrieverResources = false}: ChatMessageProps) {
+export function ChatMessage({ message: { id, role, content, retrieverResources, files }, showRetrieverResources = false}: ChatMessageProps) {
   const { resolvedTheme } = useTheme()
   const isMobile = useIsMobile()
   const { userId, regenerateMessage } = useChat()
@@ -276,6 +277,7 @@ export function ChatMessage({ message: { id, role, content, retrieverResources }
 
           {role === 'user' ? (
             <div className="max-w-prose">
+              {files && files.length > 0 && (<FilePreview inputPreview={true} inputFiles={files} />)}
               <Markdown>{content}</Markdown>
             </div>
           ) : (

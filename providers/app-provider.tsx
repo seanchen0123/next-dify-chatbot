@@ -4,8 +4,9 @@ import { useState, useEffect, ReactNode } from 'react'
 import { getAppInfo } from '@/services/client/app-info'
 import { getAppParameters } from '@/services/client/app-parameters'
 import { getAppMeta } from '@/services/client/app-meta'
-import { AppInfoResponse, AppParametersResponse, AppMetaResponse } from '@/services/types/common'
+import { AppInfoResponse, AppParametersResponse, AppMetaResponse, FileUploadConfig } from '@/services/types/common'
 import { AppContext } from '@/contexts/app-context'
+import { generateFileUploadConfig } from '@/lib/file-utils'
 
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -14,6 +15,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [appMeta, setAppMeta] = useState<AppMetaResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
+  const [uploadConfig, setUploadConfig] = useState<FileUploadConfig>(generateFileUploadConfig())
 
   useEffect(() => {
     const fetchAppData = async () => {
@@ -42,8 +44,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     fetchAppData()
   }, [])
 
+  useEffect(() => {
+    // 当 appParameters 更新时，重新生成上传配置
+    if (appParameters) {
+      setUploadConfig(generateFileUploadConfig(appParameters))
+    }
+  }, [appParameters])
+
   return (
-    <AppContext.Provider value={{ appInfo, appParameters, appMeta, isLoading, error }}>
+    <AppContext.Provider value={{ appInfo, appParameters, appMeta, isLoading, error, uploadConfig }}>
       {children}
     </AppContext.Provider>
   )

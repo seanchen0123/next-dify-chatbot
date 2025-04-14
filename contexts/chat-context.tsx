@@ -3,6 +3,8 @@
 import { createContext, useContext } from 'react'
 import { DisplayMessage } from '@/types/message'
 import { ApiConversation } from '@/types/conversation'
+import { UploadedFileResponse } from '@/services/types/common'
+import { UploadFileItem } from '@/types/chat'
 
 interface ChatContextType {
   userId: string
@@ -37,6 +39,12 @@ interface ChatContextType {
   regenerateMessage: (messageId: string) => Promise<void>
   // 下轮对话建议问题
   suggestionQuestions: string[]
+  // 文件上传
+  uploadedFiles: UploadedFileResponse[]
+  uploadingFiles: boolean
+  uploadFile: (file: File) => Promise<UploadedFileResponse>
+  removeFile: (fileId: string) => void
+  clearUploadedFiles: () => void
 }
 
 export const ChatContext = createContext<ChatContextType | undefined>(undefined)

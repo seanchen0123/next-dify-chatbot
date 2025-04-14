@@ -65,6 +65,9 @@ export interface AppParametersResponse {
   speech_to_text: {
     enabled: boolean
   }
+  text_to_speech: {
+    enabled: boolean
+  }
   retriever_resource: {
     enabled: boolean
   }
@@ -93,10 +96,18 @@ export interface AppParametersResponse {
     }
   }>
   file_upload: {
-    image: {
-      enabled: boolean
-      number_limits: number
-      transfer_methods: string[]
+    enabled: boolean
+    allowed_file_extensions?: string[]
+    allowed_file_types: string[]
+    allowed_file_upload_methods?: string[]
+    number_limits: number,
+    fileUploadConfig: {
+      batch_count_limit: number
+      file_size_limit: number
+      image_file_size_limit: number
+      audio_file_size_limit: number
+      video_file_size_limit: number
+      workflow_file_upload_limit: number
     }
   }
   system_parameters: {
@@ -104,6 +115,7 @@ export interface AppParametersResponse {
     image_file_size_limit: number
     audio_file_size_limit: number
     video_file_size_limit: number
+    workflow_file_upload_limit: number
   }
 }
 
@@ -117,4 +129,37 @@ export interface AppMetaResponse {
       }
     }
   }
+}
+
+// 新增文件上传相关类型
+export interface UploadFileParams {
+  file: File
+  userId: string
+}
+
+export interface UploadedFileResponse {
+  id: string
+  name: string
+  size: number
+  extension: string
+  mime_type: string
+  created_by: string
+  created_at: string
+  url?: string
+}
+
+// 新增文件上传配置接口
+export interface FileUploadConfig {
+  enabled: boolean
+  allowedTypes: string[]
+  allowedExtensions: string[]
+  maxFiles: number
+  maxSizeInMB: {
+    default: number
+    image: number
+    audio: number
+    video: number
+    document: number
+  }
+  acceptString: string
 }
