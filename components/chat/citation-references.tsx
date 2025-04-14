@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { FileTextIcon } from 'lucide-react'
+import { FileTextIcon, Quote, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -51,8 +51,12 @@ export function CitationReferences({ resources }: CitationReferencesProps) {
   const selectedDocument = groupedResources.find(doc => doc.document_id === selectedDocumentId)
 
   return (
-    <div className="mt-2 pt-2 border-t border-border">
-      <div className="text-xs text-muted-foreground mb-2">引用内容</div>
+    <div className="mt-2">
+      <div className="text-xs text-muted-foreground mb-3 flex items-center gap-1">
+        <Quote className='w-3 h-3' />
+        <span>引用内容</span>
+        <div className='flex-1 border-t'></div>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {groupedResources.map(doc => (
           <Button
@@ -97,6 +101,9 @@ export function CitationReferences({ resources }: CitationReferencesProps) {
                       <p className='text-sm'>
                       {segment.content}
                       </p>
+                      <div className='flex items-center gap-2'>
+                        <Button variant="outline" className='px-2 my-2 h-7 bg-background-300/10 hover:bg-background-300/20 text-foreground/60 hover:text-foreground/70 border-foreground/10 flex items-center justify-center'><Target />相关性：{segment.score.toFixed(2)}</Button>
+                      </div>
                     </div>
                   </div>
                 ))}

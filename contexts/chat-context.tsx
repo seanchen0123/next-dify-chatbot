@@ -35,6 +35,8 @@ interface ChatContextType {
   sendMessage: (prompt: string) => Promise<void>
   stopGeneration: () => Promise<void>
   regenerateMessage: (messageId: string) => Promise<void>
+  // 下轮对话建议问题
+  suggestionQuestions: string[]
 }
 
 export const ChatContext = createContext<ChatContextType | undefined>(undefined)

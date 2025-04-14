@@ -9,9 +9,12 @@ import { EventData, MessageEndEvent, MessageEvent, WorkflowFinishedEvent } from 
 import { DisplayMessage } from '@/types/message'
 import { ApiConversation } from '@/types/conversation'
 import { ChatContext } from '@/contexts/chat-context'
+import { useApp } from '@/contexts/app-context'
+import { nanoid } from 'nanoid';
 
 export function ChatProvider({ userId, children }: { userId: string, children: ReactNode }) {
   const router = useRouter()
+  const { appParameters } = useApp()
   const [conversationId, setConversationId] = useState('')
   const [chatStarted, setChatStarted] = useState(false)
   const [messages, setMessages] = useState<DisplayMessage[]>([])
@@ -35,7 +38,7 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
   const [currentTaskId, setCurrentTaskId] = useState<string>('')
 
   // 下轮问题建议问题列表
-  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [suggestionQuestions, setSuggestionQuestions] = useState<string[]>([])
 
   // 加载会话列表
   const loadConversations = async () => {
@@ -118,7 +121,7 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
   }
 
   // 更新最后一条消息（用于流式响应）
-  const updateLastMessage = (content: string) => {
+  const updateLastMessage = (content: string, messageId?: string) => {
     setMessages(prev => {
       const lastMessage = prev[prev.length - 1]
 
@@ -136,7 +139,7 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
         return [
           ...prev,
           {
-            id: `assistant-${Date.now()}`,
+            id: `assistant-${messageId || nanoid().replace('-', '')}`,
             role: 'assistant',
             content: content,
             createdAt: new Date()
@@ -187,7 +190,7 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
   // 专门处理message事件 - 增量累加模式
   function handleMessageEvent(eventData: MessageEvent) {
     setAnswerStarted(true)
-    const { answer, from_variable_selector, conversation_id } = eventData
+    const { answer, from_variable_selector, conversation_id, message_id } = eventData
     if (from_variable_selector && from_variable_selector[1] === 'text') {
       console.log('收到消息:', answer)
       // 保存会话ID
@@ -196,7 +199,7 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
       }
 
       // 使用 context 中的 updateLastMessage 函数
-      updateLastMessage(answer)
+      updateLastMessage(answer, message_id)
     }
   }
 
@@ -212,6 +215,12 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
         // 添加引用资源
         if (eventData.metadata.retriever_resources && eventData.metadata.retriever_resources.length > 0) {
           lastMessage.retrieverResources = eventData.metadata.retriever_resources
+        }
+        // 添加下一轮问题建议
+        if (appParameters?.suggested_questions_after_answer.enabled) {
+          getNextRoundSuggestions({messageId: lastMessage.id.replace('assistant-', ''), userId}).then(res => {
+            setSuggestionQuestions(res)
+          })
         }
       }
       
@@ -323,7 +332,7 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
     setGenerateLoading(true)
     const processedPrompt = prompt.replace(/\n\t/g, ' ').trim()
     const userMessage: DisplayMessage = {
-      id: `user-${Date.now()}`,
+      id: `user-${nanoid().replace('-', '')}`,
       role: 'user',
       content: processedPrompt,
       createdAt: new Date()
@@ -450,7 +459,8 @@ export function ChatProvider({ userId, children }: { userId: string, children: R
         answerStarted,
         setAnswerStarted,
         setGenerateLoading,
-        regenerateMessage
+        regenerateMessage,
+        suggestionQuestions
       }}
     >
       {children}

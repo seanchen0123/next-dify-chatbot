@@ -7,11 +7,11 @@ import { useChat } from '@/contexts/chat-context'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Send, Sparkles, Globe, Paperclip } from 'lucide-react'
+import { Send, Globe, Paperclip, Atom } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useApp } from '@/contexts/app-context'
 import EmptySkeletonWithId from './empty-skeleton-with-id'
+import SuggestedQuestions from './suggested-questions'
 
 interface ChatUIProps {
   chatId?: string
@@ -21,15 +21,14 @@ export function ChatUI({ chatId }: ChatUIProps) {
   const { appParameters } = useApp()
   const router = useRouter()
   const {
-    chatStarted,
     setConversationId,
     messages,
     sendMessage,
     isLoadingMessages,
-    setGenerateLoading,
     stopGeneration,
     generateLoading,
     answerStarted,
+    suggestionQuestions
   } = useChat()
 
   // 移除本地的 messages 状态，使用 context 中的
@@ -133,6 +132,13 @@ export function ChatUI({ chatId }: ChatUIProps) {
 
           {/* 消息输入区域 - 修改禁用条件 */}
           <div className="p-4 pt-0">
+            {/* 下一轮会话建议问题 */}
+            {appParameters?.suggested_questions_after_answer.enabled && 
+              suggestionQuestions && 
+              suggestionQuestions.length > 0 && (
+              <SuggestedQuestions suggestedQuestions={suggestionQuestions} onSendMessage={(prompt) => sendMessage(prompt)} />
+            )}
+            {/* 消息输入表单 */}
             <form onSubmit={handleSendMessage} className="mx-auto max-w-3xl">
               <div className="relative flex flex-col rounded-xl border bg-background shadow-sm">
                 {/* 输入框 */}
@@ -184,7 +190,7 @@ export function ChatUI({ chatId }: ChatUIProps) {
                             variant="ghost"
                             className="h-8 w-8 rounded-full  opacity-80"
                           >
-                            <Sparkles className="scale-125" />
+                            <Atom className="scale-125" />
                             <span className="sr-only">深度思考</span>
                           </Button>
                         </TooltipTrigger>

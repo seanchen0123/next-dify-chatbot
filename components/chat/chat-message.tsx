@@ -8,16 +8,14 @@ import {
   ChevronUpIcon,
   CheckIcon
 } from 'lucide-react'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
-import Image from 'next/image'
 import { Button } from '../ui/button'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism'
 import { materialLight } from 'react-syntax-highlighter/dist/cjs/styles/prism'
-import { useRef, useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { DisplayMessage } from '@/types/message'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
@@ -30,6 +28,8 @@ import { useIsMobile } from '@/hooks/use-mobile'
 interface ChatMessageProps {
   message: DisplayMessage
   showRetrieverResources?: boolean
+  showSuggestedQuestions?: boolean
+  suggestedQuestions?: string[]
 }
 
 export function ChatMessage({ message: { id, role, content, retrieverResources }, showRetrieverResources = false}: ChatMessageProps) {
@@ -359,7 +359,7 @@ export function ChatMessage({ message: { id, role, content, retrieverResources }
                 )}
 
                 {/* 引用内容部分 */}
-                {showRetrieverResources && retrieverResources && retrieverResources.length > 0 && <CitationReferences resources={retrieverResources} />}
+                {showRetrieverResources && retrieverResources && retrieverResources.length > 0 && <CitationReferences resources={retrieverResources} />}                
               </div>
             </div>
           )}
