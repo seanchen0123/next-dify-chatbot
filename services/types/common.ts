@@ -163,3 +163,9 @@ export interface FileUploadConfig {
   }
   acceptString: string
 }
+
+export interface TextToAudioParams {
+  messageId: string
+  text: string
+  userId: string
+}

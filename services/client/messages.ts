@@ -1,7 +1,7 @@
 import api from '@/lib/api'
 import { Message, MessagesResponse, GetFormattedMessagesResult } from '@/types/message'
 import { formatMessagesToDisplay, sortMessagesByTime } from '@/lib/utils'
-import { GetMessagesParams, GetNextRoundSuggestionsParams, StopMessageParams, SubmitMessageFeedbackParams } from '../types/common'
+import { GetMessagesParams, GetNextRoundSuggestionsParams, StopMessageParams, SubmitMessageFeedbackParams, TextToAudioParams } from '../types/common'
 
 // 获取会话历史消息（原始格式）
 export async function getMessages(params: GetMessagesParams): Promise<Message[]> {
@@ -95,6 +95,23 @@ export async function getNextRoundSuggestions(params: GetNextRoundSuggestionsPar
     return response.data.data
   } catch (error) {
     console.error('获取下一轮建议问题列表失败:', error)
+    throw error
+  }
+}
+
+export async function textToAudio(params: TextToAudioParams): Promise<Blob> {
+  const { messageId, text, userId } = params
+  try {
+    const response = await api.post('/text-to-audio', {
+      messageId,
+      text,
+      userId
+    }, {
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('文本转语音失败:', error)
     throw error
   }
 }

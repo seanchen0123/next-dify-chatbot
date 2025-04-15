@@ -94,3 +94,7 @@ export function formatMessagesToDisplay(messages: Message[]): DisplayMessage[] {
 export function sortMessagesByTime(messages: DisplayMessage[]): DisplayMessage[] {
   return [...messages].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 }
+
+export function removeMarkdownLinks(text: string) {
+  return text.replace(/!?\[.*?\]\(.*?\)/g, '');
+}

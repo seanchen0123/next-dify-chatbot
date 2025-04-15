@@ -45,6 +45,7 @@ interface ChatContextType {
   uploadFile: (file: File) => Promise<UploadedFileResponse>
   removeFile: (fileId: string) => void
   clearUploadedFiles: () => void
+  textToSpeech: (messageId?: string, text?: string) => Promise<string | null>
 }
 
 export const ChatContext = createContext<ChatContextType | undefined>(undefined)

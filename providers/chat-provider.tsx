@@ -3,7 +3,7 @@
 import { useState, ReactNode, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { deleteConversation, getConversations } from '@/services/client/conversations'
-import { getFormattedMessages, getNextRoundSuggestions, stopMessageGeneration } from '@/services/client/messages'
+import { getFormattedMessages, getNextRoundSuggestions, stopMessageGeneration, textToAudio } from '@/services/client/messages'
 import { ChatRequest, UploadFileItem } from '@/types/chat'
 import { EventData, MessageEndEvent, MessageEvent, WorkflowFinishedEvent } from '@/types/events'
 import { DisplayMessage, MessageFile } from '@/types/message'
@@ -205,7 +205,11 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
         setConversationId(conversation_id)
       }
       updateLastMessage(answer, message_id)
-    } else if (from_variable_selector && from_variable_selector[0] === 'answer' && from_variable_selector[1] === 'answer') {
+    } else if (
+      from_variable_selector &&
+      from_variable_selector[0] === 'answer' &&
+      from_variable_selector[1] === 'answer'
+    ) {
       updateLastMessage(answer, message_id)
     } else if (from_variable_selector && from_variable_selector[0] === 'sys' && from_variable_selector[1] === 'files') {
       const replacedAnswer = replacePreviewUrl(answer)
@@ -375,7 +379,7 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
       } else {
         formattedFiles = uploadedFiles.map(file => {
           const type = getFileTypeFromExtension(file.extension)
-  
+
           return {
             type,
             transfer_method: 'local_file',
@@ -463,7 +467,7 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
       const userMessage = messages[userMessageIndex]
 
       if (userMessage.files && userMessage.files.length > 0) {
-        throw new Error('Dify Api暂不支持包含文件的消息重新生成') 
+        throw new Error('Dify Api暂不支持包含文件的消息重新生成')
         // TODO: 支持重新生成包含文件的用户消息
       }
 
@@ -516,6 +520,24 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
     setUploadedFiles([])
   }
 
+  // 文字转语音
+  const textToSpeech = async (messageId?: string, text?: string) => {
+    if (!userId) return null
+
+    try {
+      const blob = await textToAudio({
+        userId,
+        messageId: messageId || '',
+        text: text || ''
+      })
+      const audioUrl = URL.createObjectURL(blob)
+      return audioUrl
+    } catch (error) {
+      console.error('文字转语音失败:', error)
+      throw error
+    }
+  }
+
   return (
     <ChatContext.Provider
       value={{
@@ -554,7 +576,8 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
         uploadingFiles,
         uploadFile: handleUploadFile,
         removeFile: handleRemoveFile,
-        clearUploadedFiles
+        clearUploadedFiles,
+        textToSpeech
       }}
     >
       {children}

@@ -16,7 +16,8 @@ import {
   SidebarFooter,
   SidebarMenu,
   SidebarMenuItem,
-  SidebarTrigger
+  SidebarTrigger,
+  useSidebar
 } from '@/components/ui/sidebar'
 import { useIsMobile } from '@/hooks/use-mobile'
 
@@ -63,6 +64,8 @@ interface SidebarProps {}
 
 export function Sidebar({}: SidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+  const { setOpenMobile } = useSidebar()
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [renameDialogOpen, setRenameDialogOpen] = useState(false)
@@ -131,8 +134,8 @@ export function Sidebar({}: SidebarProps) {
     const lastMonth = today.subtract(30, 'day')
 
     const groups: Record<string, ApiConversation[]> = {
-      今天: [],
-      昨天: [],
+      '今天': [],
+      '昨天': [],
       '7天内': [],
       '30天内': []
     }
@@ -241,7 +244,12 @@ export function Sidebar({}: SidebarProps) {
                         pathname === `/chat/${conversation.id}` && 'bg-slate-500/10'
                       )}
                     >
-                      <Link href={`/chat/${conversation.id}?userId=${userId}`}>
+                      <div className='cursor-pointer' onClick={() => {
+                        router.push(`/chat/${conversation.id}?userId=${userId}`)
+                        if (isMobile) {
+                          setOpenMobile(false)
+                        }
+                      }}>
                         <div className="flex items-center justify-between w-full">
                           <span className="truncate font-medium text-sm">{conversation.name}</span>
 
@@ -285,7 +293,7 @@ export function Sidebar({}: SidebarProps) {
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
-                      </Link>
+                      </div>
                     </SidebarMenuItem>
                   ))}
                 </div>

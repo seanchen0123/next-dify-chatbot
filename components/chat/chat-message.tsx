@@ -6,16 +6,20 @@ import {
   ThumbsDownIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  CheckIcon
+  CheckIcon,
+  PlayIcon,
+  PauseIcon,
+  VolumeXIcon,
+  Loader2
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, removeMarkdownLinks } from '@/lib/utils'
 import { Button } from '../ui/button'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism'
 import { materialLight } from 'react-syntax-highlighter/dist/cjs/styles/prism'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTheme } from 'next-themes'
 import { DisplayMessage } from '@/types/message'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
@@ -31,12 +35,17 @@ interface ChatMessageProps {
   showRetrieverResources?: boolean
   showSuggestedQuestions?: boolean
   suggestedQuestions?: string[]
+  tts?: boolean
 }
 
-export function ChatMessage({ message: { id, role, content, retrieverResources, files }, showRetrieverResources = false}: ChatMessageProps) {
+export function ChatMessage({
+  message: { id, role, content, retrieverResources, files },
+  showRetrieverResources = false,
+  tts = false
+}: ChatMessageProps) {
   const { resolvedTheme } = useTheme()
   const isMobile = useIsMobile()
-  const { userId, regenerateMessage } = useChat()
+  const { userId, regenerateMessage, textToSpeech } = useChat()
   const [processedContent, setProcessedContent] = useState<{ thinking: string | null; mainContent: string }>({
     thinking: null,
     mainContent: content
@@ -46,6 +55,16 @@ export function ChatMessage({ message: { id, role, content, retrieverResources, 
   const [feedback, setFeedback] = useState<'like' | 'dislike' | null>(null)
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
   const [isRegenerating, setIsRegenerating] = useState(false)
+
+  // 使用 useRef 创建音频引用
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  // 添加语音播放相关状态
+  const [ttsLoading, setTtsLoading] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [audioError, setAudioError] = useState(false)
+  // 添加音频缓存
+  const audioCache = useRef<Map<string, string>>(new Map())
 
   // 根据当前主题选择代码高亮样式
   const codeTheme = resolvedTheme === 'dark' ? vscDarkPlus : materialLight
@@ -156,7 +175,7 @@ export function ChatMessage({ message: { id, role, content, retrieverResources, 
     // 如果点击的是当前已选择的反馈，则取消反馈
     const newRating = rating === feedback ? null : rating
 
-    // 提取消息ID（去掉前缀）
+    // 提取消息ID（去掉后缀）
     const messageId = id.replace('-assistant', '')
 
     setIsSubmittingFeedback(true)
@@ -207,6 +226,116 @@ export function ChatMessage({ message: { id, role, content, retrieverResources, 
     }
   }
 
+  // 处理语音播放
+  const handleTextToSpeech = async () => {
+    try {
+      // 如果已经在播放，则暂停
+      if (isPlaying && audioRef.current) {
+        audioRef.current.pause()
+        setIsPlaying(false)
+        return
+      }
+
+      // 提取消息ID（去掉后缀）
+      const messageId = id.replace('-assistant', '')
+      // 检查缓存中是否已有此消息的音频
+      let url = audioCache.current.get(messageId) || null
+
+      // 如果已经有音频URL但没有播放，则继续播放
+      if (audioRef.current && url) {
+        try {
+          // 确保src是最新的
+          if (audioRef.current.src !== url) {
+            audioRef.current.src = url
+          }
+
+          await audioRef.current.play()
+          setIsPlaying(true)
+        } catch (error) {
+          console.error('播放音频失败:', error)
+          setAudioError(true)
+          toast.error('音频播放失败')
+        }
+        return
+      }
+
+      // 否则，生成新的语音
+      setAudioError(false)
+
+      // 如果缓存中没有，则调用API生成
+      if (!url) {
+        try {
+          setTtsLoading(true)
+          const noLinksContent = removeMarkdownLinks(processedContent.mainContent)
+          // 这里将messageId设置为空字符串，这样TTS会按text的内容来生成音频
+          url = await textToSpeech('', noLinksContent)
+        } catch {
+          throw new Error('请求TTS接口失败')
+        } finally {
+          setTtsLoading(false)
+        }
+
+        if (!url) {
+          throw new Error('生成语音失败')
+        }
+
+        // 将URL添加到缓存
+        audioCache.current.set(messageId, url)
+      }
+
+      // 如果audioRef还没有关联到元素，创建一个新的
+      if (!audioRef.current) {
+        const audio = new Audio()
+        audio.src = url
+
+        // 设置音频事件
+        audio.onplay = () => setIsPlaying(true)
+        audio.onpause = () => setIsPlaying(false)
+        audio.onended = () => {
+          setIsPlaying(false)
+        }
+        audio.onerror = e => {
+          console.error('音频错误:', e)
+          setAudioError(true)
+          setIsPlaying(false)
+          toast.error('音频播放失败')
+        }
+
+        audioRef.current = audio
+      }
+      audioRef.current.src = url
+
+      // 开始播放
+      try {
+        await audioRef.current.play()
+        setIsPlaying(true)
+      } catch (error) {
+        console.error('播放音频失败:', error)
+        setAudioError(true)
+        toast.error('音频播放失败')
+      }
+    } catch (error) {
+      console.error('语音播放失败:', error)
+      setAudioError(true)
+      toast.error('语音生成失败')
+    }
+  }
+
+  // 组件卸载时清理资源
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+      }
+      // 组件卸载时清理所有缓存的URL
+      audioCache.current.forEach(url => {
+        if (url.startsWith('blob:')) {
+          URL.revokeObjectURL(url)
+        }
+      })
+    }
+  }, [])
+
   return (
     <div className="flex flex-col items-center w-full max-w-3xl text-sm">
       <div className={cn('flex flex-col w-full mb-2', role === 'user' ? 'items-end' : 'items-start')}>
@@ -242,11 +371,34 @@ export function ChatMessage({ message: { id, role, content, retrieverResources, 
                   >
                     {isCopied ? <CheckIcon className="w-4 h-4 text-green-500" /> : <CopyIcon className="w-4 h-4" />}
                   </button>
+                  {/* 添加语音播放按钮 */}
+                  {tts && (
+                    <button
+                      onClick={handleTextToSpeech}
+                      className={cn(
+                        'flex items-center justify-center w-6 h-6 rounded-sm hover:bg-primary/20 p-1 duration-200 transition-all',
+                        isPlaying && 'bg-primary/20 text-primary',
+                        audioError && 'text-red-500'
+                      )}
+                      title={isPlaying ? '暂停播放' : ttsLoading ? '生成语音中...' : '播放语音'}
+                      disabled={isRegenerating || ttsLoading}
+                    >
+                      {audioError ? (
+                        <VolumeXIcon className="w-4 h-4" />
+                      ) : ttsLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                      ) : isPlaying ? (
+                        <PauseIcon className="w-4 h-4" />
+                      ) : (
+                        <PlayIcon className="w-4 h-4" />
+                      )}
+                    </button>
+                  )}
                   <button
                     onClick={handleRegenerate}
                     className={cn(
-                      "flex items-center justify-center w-6 h-6 rounded-sm hover:bg-primary/20 p-1 duration-200 transition-all",
-                      isRegenerating && "animate-spin text-primary"
+                      'flex items-center justify-center w-6 h-6 rounded-sm hover:bg-primary/20 p-1 duration-200 transition-all',
+                      isRegenerating && 'animate-spin text-primary'
                     )}
                     title="重新生成"
                     disabled={isRegenerating}
@@ -282,7 +434,7 @@ export function ChatMessage({ message: { id, role, content, retrieverResources, 
 
           {role === 'user' ? (
             <div className="max-w-prose">
-              {files && files.length > 0 && (<FilePreview inputPreview={true} inputFiles={files} />)}
+              {files && files.length > 0 && <FilePreview inputPreview={true} inputFiles={files} />}
               <Markdown>{content}</Markdown>
             </div>
           ) : (
@@ -290,7 +442,12 @@ export function ChatMessage({ message: { id, role, content, retrieverResources, 
               <div className="h-10 w-10 p-1 border-2 border-primary/90 rounded-full shrink-0 flex items-center justify-center bg-primary/10">
                 <Bot className="h-6 w-6 text-primary" />
               </div>
-              <div className={cn("prose prose-sm dark:prose-invert prose-pre:border-0 prose-pre:bg-transparent", isMobile ? 'pr-14' : 'pr-0')}>
+              <div
+                className={cn(
+                  'prose prose-sm dark:prose-invert prose-pre:border-0 prose-pre:bg-transparent',
+                  isMobile ? 'pr-14' : 'pr-0'
+                )}
+              >
                 {/* 思考过程部分 - 使用 Collapsible 组件 */}
                 {processedContent.thinking && (
                   <div className="pt-2 px-2 bg-muted/50 rounded-md border border-muted-foreground/20 w-full">
@@ -341,7 +498,7 @@ export function ChatMessage({ message: { id, role, content, retrieverResources, 
                                   width: '100%', // 设置宽度为100%以填充父元素的宽度
                                   margin: 0,
                                   padding: '0.5rem',
-                                  borderRadius: '0.5rem',
+                                  borderRadius: '0.5rem'
                                 }}
                               >
                                 {String(children).replace(/\n$/, '')}
@@ -366,7 +523,9 @@ export function ChatMessage({ message: { id, role, content, retrieverResources, 
                 )}
 
                 {/* 引用内容部分 */}
-                {showRetrieverResources && retrieverResources && retrieverResources.length > 0 && <CitationReferences resources={retrieverResources} />}                
+                {showRetrieverResources && retrieverResources && retrieverResources.length > 0 && (
+                  <CitationReferences resources={retrieverResources} />
+                )}
               </div>
             </div>
           )}

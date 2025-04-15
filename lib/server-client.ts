@@ -30,6 +30,9 @@ serverClient.interceptors.request.use(
 // 添加响应拦截器，处理文件预览URL
 serverClient.interceptors.response.use(
   response => {
+    if (response.config.responseType && ['blob', 'stream'].includes(response.config.responseType)) {
+      return response
+    }
     // 检查响应数据是否为字符串
     if (typeof response.data === 'string') {
       response.data = response.data.replace(response.data, '/api/files/$1/preview$2')

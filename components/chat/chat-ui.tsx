@@ -116,6 +116,7 @@ export function ChatUI({ chatId }: ChatUIProps) {
                   key={message.id}
                   message={message}
                   showRetrieverResources={appParameters?.retriever_resource.enabled}
+                  tts={appParameters?.text_to_speech.enabled}
                 />
               ))}
               {/* 修改加载动画的显示逻辑：只在生成中且没有开始回答时显示 */}
