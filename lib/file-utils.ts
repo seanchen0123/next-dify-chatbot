@@ -116,3 +116,14 @@ export function validateFile(file: File, config: FileUploadConfig): { valid: boo
   
   return { valid: true }
 }
+
+export function isBase64ImageUrl(url: string): boolean {
+  return /^data:image\/[a-z]+;base64,/.test(url);
+}
+
+// 使用正则表达式替换所有匹配的文件预览URL
+export function replacePreviewUrl(content: string): string {
+  // 匹配 /files/{fileId}/file-preview 格式的URL
+  const regex = /\/files\/([a-zA-Z0-9-]+)\/file-preview(\?[^"'\s]+)/g
+  return content.replace(regex, '/api/files/$1/file-preview$2')
+}

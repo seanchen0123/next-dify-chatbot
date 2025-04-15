@@ -29,21 +29,21 @@ export function FilePreview({
   if (!files || !inputFiles) return null
 
   // 获取文件图标和颜色
-  const getFileIconAndColor = (file: RenderFile): { icon: React.ReactNode; color: string } => {
+  const getFileIconAndColor = (file: RenderFile): { icon: React.ReactNode; color: string; fileType: string } => {
     const extension = file.extension.toLowerCase()
 
     if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension)) {
-      return { icon: <ImageIcon className="h-5 w-5" />, color: 'text-blue-500' }
+      return { icon: <ImageIcon className="h-4 w-4" />, color: 'text-blue-500', fileType: 'image' }
     } else if (['pdf'].includes(extension)) {
-      return { icon: <FileText className="h-5 w-5" />, color: 'text-red-500' }
+      return { icon: <FileText className="h-4 w-4" />, color: 'text-red-500', fileType: 'pdf' }
     } else if (['xlsx', 'xls', 'csv'].includes(extension)) {
-      return { icon: <FileSpreadsheet className="h-5 w-5" />, color: 'text-green-500' }
+      return { icon: <FileSpreadsheet className="h-4 w-4" />, color: 'text-green-500', fileType: 'spreadsheet'}
     } else if (['mp3', 'wav', 'm4a', 'ogg', 'webm', 'amr'].includes(extension)) {
-      return { icon: <FileAudio className="h-5 w-5" />, color: 'text-purple-500' }
+      return { icon: <FileAudio className="h-4 w-4" />, color: 'text-purple-500', fileType: 'audio' }
     } else if (['mp4', 'mov', 'avi', 'webm', 'mpeg', 'mpga'].includes(extension)) {
-      return { icon: <FileVideo className="h-5 w-5" />, color: 'text-orange-500' }
+      return { icon: <FileVideo className="h-4 w-4" />, color: 'text-orange-500', fileType: 'video'}
     } else {
-      return { icon: <FileText className="h-5 w-5" />, color: 'text-gray-500' }
+      return { icon: <FileText className="h-4 w-4" />, color: 'text-gray-500', fileType: 'other'}
     }
   }
 
@@ -61,7 +61,7 @@ export function FilePreview({
   let renderFiles: RenderFile[] = []
   if (inputPreview && inputFiles && inputFiles.length > 0) {
     renderFiles = inputFiles.map(file => ({
-      extension: file.mime_type.split('/')[1] || '',
+      extension: file.filename.split('.')[1] || '',
       name: file.filename,
       url: file.url,
       size: file.size,
@@ -80,14 +80,14 @@ export function FilePreview({
   return (
     <div className="flex flex-wrap gap-2">
       {renderFiles.map(file => {
-        const { icon, color } = getFileIconAndColor(file)
-        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(file.extension.toLowerCase())
+        const { icon, color, fileType } = getFileIconAndColor(file)
+        const isImage = fileType === 'image'
 
         return (
           <div
             key={file.id}
             className="group flex flex-col border border-accent rounded-md bg-background shadow-sm relative cursor-pointer"
-            style={{ width: isImage ? '68px' : '144px', height: '68px' }}
+            style={{ width: isImage ? '74px' : '144px', height: '74px' }}
           >
             {!inputPreview && !disabled && (
               <button
@@ -101,7 +101,7 @@ export function FilePreview({
             )}
             {/* 文件预览区域 */}
             {isImage ? (
-              <div className="w-full flex items-center justify-center overflow-hidden">
+              <div className="w-full flex items-center justify-center overflow-hidden h-full">
                 <img
                   src={file.url}
                   alt={file.name}
@@ -137,9 +137,8 @@ export function FilePreview({
                 />
               </div>
             ) : (
-              <div className="w-full p-2 overflow-hidden">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
+              <div className="w-full p-2 overflow-hidden h-full">
+                <div className="flex flex-col h-full justify-between">
                     <p
                       className="text-xs font-medium line-clamp-2"
                       title={file.name}
@@ -154,7 +153,6 @@ export function FilePreview({
                       </span>
                       <span className="text-xs text-muted-foreground ml-2">{formatFileSize(file.size)}</span>
                     </div>
-                  </div>
                 </div>
               </div>
             )}

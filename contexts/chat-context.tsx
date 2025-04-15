@@ -34,7 +34,7 @@ interface ChatContextType {
   isLoading: boolean
   currentTaskId: string
   setCurrentTaskId: (id: string) => void
-  sendMessage: (prompt: string) => Promise<void>
+  sendMessage: (prompt: string, promptFiles?: UploadFileItem[]) => Promise<void>
   stopGeneration: () => Promise<void>
   regenerateMessage: (messageId: string) => Promise<void>
   // 下轮对话建议问题

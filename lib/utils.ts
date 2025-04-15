@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { Message, DisplayMessage, MessageFile } from '@/types/message';
+import { replacePreviewUrl } from './file-utils';
 
 
 export function cn(...inputs: ClassValue[]) {
@@ -48,6 +49,7 @@ export function formatMessagesToDisplay(messages: Message[]): DisplayMessage[] {
     let assistantFiles: MessageFile[] = []
     if (message.message_files && message.message_files.length > 0) {
       message.message_files.forEach(file => {
+        file.url = `/api${file.url}`
         if (file.belongs_to === 'user') {
           userFiles.push(file)
         } else {
@@ -69,7 +71,7 @@ export function formatMessagesToDisplay(messages: Message[]): DisplayMessage[] {
       const assistantMessage: DisplayMessage = {
         id: `${message.id}-assistant`,
         role: 'assistant',
-        content: message.answer,
+        content: replacePreviewUrl(message.answer),
         createdAt: new Date(parseInt(message.created_at) * 1000 + 1000), // 助手消息时间稍晚于用户消息
         files: assistantFiles
       }

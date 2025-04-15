@@ -194,6 +194,11 @@ export function ChatMessage({ message: { id, role, content, retrieverResources, 
 
     setIsRegenerating(true)
     try {
+      if (files && files.length > 0) {
+        toast.error('参数错误', {
+          description: 'Dify Api暂不支持包含文件的消息重新生成'
+        })
+      }
       await regenerateMessage(id)
     } catch (error) {
       console.error('重新生成失败:', error)

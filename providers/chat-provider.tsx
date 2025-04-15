@@ -13,7 +13,7 @@ import { useApp } from '@/contexts/app-context'
 import { nanoid } from 'nanoid'
 import { UploadedFileResponse } from '@/services/types/common'
 import { fileToBase64, uploadFile } from '@/services/client/files'
-import { getFileTypeFromExtension } from '@/lib/file-utils'
+import { getFileTypeFromExtension, replacePreviewUrl } from '@/lib/file-utils'
 
 export function ChatProvider({ userId, children }: { userId: string; children: ReactNode }) {
   const router = useRouter()
@@ -198,14 +198,18 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
   function handleMessageEvent(eventData: MessageEvent) {
     setAnswerStarted(true)
     const { answer, from_variable_selector, conversation_id, message_id } = eventData
-    if (from_variable_selector && from_variable_selector[1] === 'text') {
+    if (from_variable_selector && from_variable_selector[0] === 'llm' && from_variable_selector[1] === 'text') {
       console.log('收到消息:', answer)
       // 保存会话ID
       if (conversation_id && !conversationId) {
         setConversationId(conversation_id)
       }
-
       updateLastMessage(answer, message_id)
+    } else if (from_variable_selector && from_variable_selector[0] === 'answer' && from_variable_selector[1] === 'answer') {
+      updateLastMessage(answer, message_id)
+    } else if (from_variable_selector && from_variable_selector[0] === 'sys' && from_variable_selector[1] === 'files') {
+      const replacedAnswer = replacePreviewUrl(answer)
+      updateLastMessage(replacedAnswer, message_id)
     }
   }
 
@@ -332,7 +336,7 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
     return { conversationId: receivedConversationId, messageId }
   }
 
-  const sendMessage = async (prompt: string) => {
+  const sendMessage = async (prompt: string, promptFiles: UploadFileItem[] = []) => {
     if (!prompt.trim() || isLoading) return
     setGenerateLoading(true)
     const processedPrompt = prompt.replace(/\n\t/g, ' ').trim()
@@ -363,18 +367,22 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
 
     addMessage(userMessage)
 
-    // 格式化上传的文件列表
+    // 格式化上传的文件列表，用于在input框中预览文件
     let formattedFiles: UploadFileItem[] = []
-    if (uploadedFiles.length > 0) {
-      formattedFiles = uploadedFiles.map(file => {
-        const type = getFileTypeFromExtension(file.extension)
-
-        return {
-          type,
-          transfer_method: 'local_file',
-          upload_file_id: file.id
-        }
-      })
+    if (uploadedFiles.length > 0 || promptFiles.length > 0) {
+      if (promptFiles.length > 0) {
+        formattedFiles = promptFiles
+      } else {
+        formattedFiles = uploadedFiles.map(file => {
+          const type = getFileTypeFromExtension(file.extension)
+  
+          return {
+            type,
+            transfer_method: 'local_file',
+            upload_file_id: file.id
+          }
+        })
+      }
     }
 
     const chatRequest: ChatRequest = {
@@ -453,6 +461,11 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
       }
 
       const userMessage = messages[userMessageIndex]
+
+      if (userMessage.files && userMessage.files.length > 0) {
+        throw new Error('Dify Api暂不支持包含文件的消息重新生成') 
+        // TODO: 支持重新生成包含文件的用户消息
+      }
 
       // 不删除原始消息，而是直接重新发送用户消息
       // 这样会在消息列表末尾添加新的用户消息和助手回复
