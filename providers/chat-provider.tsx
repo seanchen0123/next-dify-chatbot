@@ -538,6 +538,34 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
     }
   }
 
+  const handlePasteEvent = async (event: ClipboardEvent) => {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+
+    const hasFile = Array.from(items).some(item => item.kind === 'file');
+    if (hasFile) {
+      event.preventDefault
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.kind === 'file') {
+          if (appParameters &&
+            appParameters.file_upload.enabled &&
+            uploadedFiles.length < appParameters.file_upload.number_limits
+          ) {
+            const file = item.getAsFile();
+            if (file) {
+              try {
+                await handleUploadFile(file);
+              } catch (error) {
+                console.error('粘贴文件上传失败:', error);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   return (
     <ChatContext.Provider
       value={{
@@ -577,7 +605,8 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
         uploadFile: handleUploadFile,
         removeFile: handleRemoveFile,
         clearUploadedFiles,
-        textToSpeech
+        textToSpeech,
+        handlePasteEvent
       }}
     >
       {children}

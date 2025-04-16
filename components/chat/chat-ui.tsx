@@ -34,7 +34,8 @@ export function ChatUI({ chatId }: ChatUIProps) {
     suggestionQuestions,
     uploadedFiles,
     uploadingFiles,
-    removeFile
+    removeFile,
+    handlePasteEvent
   } = useChat()
 
   // 移除本地的 messages 状态，使用 context 中的
@@ -69,6 +70,24 @@ export function ChatUI({ chatId }: ChatUIProps) {
       handleSendMessage(e)
     }
   }
+
+  // 处理input粘贴事件
+  useEffect(() => {
+    const input = textareaRef.current
+    if (!input) return
+
+    const pasteEventHandler = (e: ClipboardEvent) => {
+      if (document.activeElement === input) {
+        handlePasteEvent(e)
+      }
+    }
+
+    input.addEventListener('paste', pasteEventHandler)
+
+    return () => {
+      input.removeEventListener('paste', pasteEventHandler)
+    }
+  }, [handlePasteEvent])
 
   // 检查是否有初始提示
   useEffect(() => {
@@ -140,11 +159,11 @@ export function ChatUI({ chatId }: ChatUIProps) {
           {/* 消息输入区域 - 修改禁用条件 */}
           <div className="p-4 pt-0">
             {/* 下一轮会话建议问题 */}
-            {appParameters?.suggested_questions_after_answer.enabled && 
-              suggestionQuestions && 
+            {appParameters?.suggested_questions_after_answer.enabled &&
+              suggestionQuestions &&
               suggestionQuestions.length > 0 && (
-              <SuggestedQuestions suggestedQuestions={suggestionQuestions} onSendMessage={(prompt) => sendMessage(prompt)} />
-            )}
+                <SuggestedQuestions suggestedQuestions={suggestionQuestions} onSendMessage={(prompt) => sendMessage(prompt)} />
+              )}
             {/* 消息输入表单 */}
             <form onSubmit={handleSendMessage} className="mx-auto max-w-3xl">
               <div className="relative flex flex-col rounded-xl border bg-background shadow-sm">
@@ -152,8 +171,8 @@ export function ChatUI({ chatId }: ChatUIProps) {
                 <div className="relative p-3">
                   {/* 已上传文件预览 */}
                   {uploadedFiles.length > 0 && (
-                    <FilePreview 
-                      files={uploadedFiles} 
+                    <FilePreview
+                      files={uploadedFiles}
                       disabled={generateLoading || uploadingFiles}
                       onRemove={removeFile}
                     />
