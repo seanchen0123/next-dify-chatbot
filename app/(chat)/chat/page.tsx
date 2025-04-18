@@ -18,7 +18,7 @@ export default function ChatPage() {
   const { appInfo, appParameters } = useApp()
   const appName = appInfo?.name || 'AI聊天助手'
   const appDescription = appInfo?.description || '开始一个新的对话，探索AI的无限可能'
-  const openingQuestions = appParameters?.suggested_questions || examplePrompts
+  const openingQuestions = appParameters?.suggested_questions.length ? appParameters?.suggested_questions : examplePrompts
 
   if (isLoadingConversations && !chatStarted) {
     return <EmptySkeleton />

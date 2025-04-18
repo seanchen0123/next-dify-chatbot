@@ -1,7 +1,6 @@
 import { Bot, MessageCirclePlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
-import { useApp } from '@/contexts/app-context'
 
 interface EmptyScreenProps {
   appName: string
