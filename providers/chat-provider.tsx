@@ -232,12 +232,11 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
         }
       }
       // 添加下一轮问题建议
-      if (appParameters?.suggested_questions_after_answer.enabled) {
+      if (appParameters?.suggested_questions_after_answer.enabled && lastMessage.role === 'assistant') {
         getNextRoundSuggestions({ messageId: lastMessage.id.replace('assistant-', ''), userId }).then(res => {
           setSuggestionQuestions(res)
         })
       }
-
       return updatedMessages
     })
   }
@@ -318,7 +317,6 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
               break
 
             case 'workflow_finished':
-              console.log('工作流完成:', (eventData as WorkflowFinishedEvent).data?.status)
               setGenerateLoading(false)
               break
 
