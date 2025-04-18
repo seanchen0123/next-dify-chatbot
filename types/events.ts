@@ -65,6 +65,8 @@ export interface TTSMessageEndEvent extends BaseEvent {
 // 消息内容替换事件
 export interface MessageReplaceEvent extends BaseEvent {
   event: 'message_replace'
+  conversation_id: string
+  message_id: string
   answer: string
 }
 

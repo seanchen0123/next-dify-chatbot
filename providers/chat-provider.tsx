@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { deleteConversation, getConversations } from '@/services/client/conversations'
 import { audioToText, getFormattedMessages, getNextRoundSuggestions, stopMessageGeneration, textToAudio } from '@/services/client/messages'
 import { ChatRequest, UploadFileItem } from '@/types/chat'
-import { EventData, MessageEndEvent, MessageEvent, WorkflowFinishedEvent } from '@/types/events'
+import { EventData, MessageEndEvent, MessageEvent, MessageReplaceEvent, WorkflowFinishedEvent } from '@/types/events'
 import { DisplayMessage, MessageFile } from '@/types/message'
 import { ApiConversation } from '@/types/conversation'
 import { ChatContext } from '@/contexts/chat-context'
@@ -128,7 +128,7 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
   }
 
   // 更新最后一条消息（用于流式响应）
-  const updateLastMessage = (content: string, messageId?: string) => {
+  const updateLastMessage = (content: string, messageId?: string, replaced?: boolean) => {
     setMessages(prev => {
       const lastMessage = prev[prev.length - 1]
 
@@ -138,7 +138,7 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
         const updatedMessages = [...prev]
         updatedMessages[updatedMessages.length - 1] = {
           ...lastMessage,
-          content: lastMessage.content + content
+          content: replaced ? content : lastMessage.content + content
         }
         return updatedMessages
       } else {
@@ -146,7 +146,7 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
         return [
           ...prev,
           {
-            id: `assistant-${messageId || nanoid().replace('-', '')}`,
+            id: `${messageId || nanoid().replace('-', '')}-assistant`,
             role: 'assistant',
             content: content,
             createdAt: new Date()
@@ -198,6 +198,11 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
   function handleMessageEvent(eventData: MessageEvent) {
     setAnswerStarted(true)
     const { answer, from_variable_selector, conversation_id, message_id } = eventData
+    // 命中了输入内容审查
+    if (!from_variable_selector) {
+      updateLastMessage(answer, message_id)
+      return
+    }
     if (from_variable_selector && from_variable_selector[0] === 'llm' && from_variable_selector[1] === 'text') {
       console.log('收到消息:', answer)
       // 保存会话ID
@@ -217,6 +222,13 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
     }
   }
 
+  // 处理message_replace事件
+  function handleMessageReplaceEvent(eventData: MessageReplaceEvent) {
+    setGenerateLoading(false)
+    const { answer, message_id } = eventData
+    updateLastMessage(answer, message_id, true)
+  }
+
   // 处理message_end事件
   function handleMessageEndEvent(eventData: MessageEndEvent) {
     // console.log('消息结束:', eventData)
@@ -233,7 +245,7 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
       }
       // 添加下一轮问题建议
       if (appParameters?.suggested_questions_after_answer.enabled && lastMessage.role === 'assistant') {
-        getNextRoundSuggestions({ messageId: lastMessage.id.replace('assistant-', ''), userId }).then(res => {
+        getNextRoundSuggestions({ messageId: lastMessage.id.replace('-assistant', ''), userId }).then(res => {
           setSuggestionQuestions(res)
         })
       }
@@ -318,6 +330,12 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
 
             case 'workflow_finished':
               setGenerateLoading(false)
+              break
+
+            case 'message_replace':
+              // 命中了输出内容审查
+              // console.log('消息替换:', eventData)
+              handleMessageReplaceEvent(eventData as MessageReplaceEvent)
               break
 
             case 'message_end':
