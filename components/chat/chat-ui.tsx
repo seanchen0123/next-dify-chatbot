@@ -7,7 +7,7 @@ import { useChat } from '@/contexts/chat-context'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Send, Globe, Paperclip, Atom } from 'lucide-react'
+import { Send, Globe, Paperclip, Atom, Mic } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useApp } from '@/contexts/app-context'
 import EmptySkeletonWithId from './empty-skeleton-with-id'
@@ -15,6 +15,7 @@ import SuggestedQuestions from './suggested-questions'
 import { FileUpload } from './file-upload'
 import { FilePreview } from './file-preview'
 import { cn } from '@/lib/utils'
+import { VoiceInputButton } from './voice-input-button'
 
 interface ChatUIProps {
   chatId?: string
@@ -35,13 +36,17 @@ export function ChatUI({ chatId }: ChatUIProps) {
     uploadedFiles,
     uploadingFiles,
     removeFile,
-    handlePasteEvent
+    handlePasteEvent,
+    speechToText
   } = useChat()
 
   // 移除本地的 messages 状态，使用 context 中的
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  // 添加录音和语音转文字状态
+  const [isRecording, setIsRecording] = useState(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
 
   // 设置conversationId，这会触发获取历史消息请求
   useEffect(() => {
@@ -121,10 +126,38 @@ export function ChatUI({ chatId }: ChatUIProps) {
     }
   }
 
+  const handleAudioCaptured = async (audioBlob: Blob) => {
+    try {
+      // 将 Blob 转换为 File 对象
+      const audioFile = new File([audioBlob], `voice-message-${Date.now()}.wav`, {
+        type: audioBlob.type || 'audio/wav'
+      })
+
+      // 设置转写状态为true
+      setIsTranscribing(true)
+      
+      // 调用语音转文字服务
+      const text = await speechToText(audioFile)
+
+      // 如果有返回文本，设置到输入框
+      if (text) {
+        const cleanedText = text.replace(/<\|.*?\|>/g, '');
+        setInput(cleanedText)
+        // 聚焦输入框
+        textareaRef.current?.focus()
+      }
+    } catch (error) {
+      console.error('语音转文字失败:', error)
+    } finally {
+      // 无论成功失败，都重置转写状态
+      setIsTranscribing(false)
+    }
+  }
+
   return (
     <div className="flex h-full flex-col">
       {/* 聊天消息区域 - 修改条件判断，使用 context 中的 messages */}
-      {(chatId && !generateLoading && isLoadingMessages) ? (
+      {chatId && !generateLoading && isLoadingMessages ? (
         <EmptySkeletonWithId />
       ) : (
         <>
@@ -162,7 +195,10 @@ export function ChatUI({ chatId }: ChatUIProps) {
             {appParameters?.suggested_questions_after_answer.enabled &&
               suggestionQuestions &&
               suggestionQuestions.length > 0 && (
-                <SuggestedQuestions suggestedQuestions={suggestionQuestions} onSendMessage={(prompt) => sendMessage(prompt)} />
+                <SuggestedQuestions
+                  suggestedQuestions={suggestionQuestions}
+                  onSendMessage={prompt => sendMessage(prompt)}
+                />
               )}
             {/* 消息输入表单 */}
             <form onSubmit={handleSendMessage} className="mx-auto max-w-3xl">
@@ -182,9 +218,12 @@ export function ChatUI({ chatId }: ChatUIProps) {
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="输入消息..."
-                    className={cn("min-h-[40px] max-h-[140px] resize-none border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0", uploadedFiles.length > 0 ? 'mt-1' : 'mt-0')}
-                    disabled={generateLoading}
+                    placeholder={isTranscribing ? "语音转文字中..." : "输入消息..."}
+                    className={cn(
+                      'min-h-[40px] max-h-[140px] resize-none border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm',
+                      uploadedFiles.length > 0 ? 'mt-1' : 'mt-0'
+                    )}
+                    disabled={generateLoading || isRecording || isTranscribing}
                   />
                 </div>
 
@@ -221,27 +260,34 @@ export function ChatUI({ chatId }: ChatUIProps) {
                         <TooltipContent side="top">深度思考</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-
                   </div>
-                  <Button
-                    type={generateLoading ? 'button' : 'submit'}
-                    size="sm"
-                    className="rounded-full"
-                    disabled={!generateLoading && !input.trim()}
-                    onClick={generateLoading ? handleStopGeneration : undefined}
-                  >
-                    {generateLoading ? (
-                      <>
-                        <span className="h-4 w-4 mr-1 bg-background rounded-full animate-pulse"></span>
-                        停止
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4 mr-1" />
-                        发送
-                      </>
-                    )}
-                  </Button>
+                  <div className="flex items-center gap-3">
+                    <VoiceInputButton 
+                      onAudioCaptured={handleAudioCaptured} 
+                      disabled={generateLoading || isTranscribing}
+                      onRecordingStateChange={setIsRecording}
+                      isTranscribing={isTranscribing}
+                    />
+                    <Button
+                      type={generateLoading ? 'button' : 'submit'}
+                      size="sm"
+                      className="rounded-full"
+                      disabled={!generateLoading && !input.trim()}
+                      onClick={generateLoading ? handleStopGeneration : undefined}
+                    >
+                      {generateLoading ? (
+                        <>
+                          <span className="h-4 w-4 mr-1 bg-background rounded-full animate-pulse"></span>
+                          停止
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-1" />
+                          发送
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </form>

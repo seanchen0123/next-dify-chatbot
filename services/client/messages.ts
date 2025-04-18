@@ -115,3 +115,22 @@ export async function textToAudio(params: TextToAudioParams): Promise<Blob> {
     throw error
   }
 }
+
+export async function audioToText(audioFile: File, userId: string): Promise<string> {
+  try {
+    const formData = new FormData()
+    formData.append('file', audioFile)
+    formData.append('userId', userId)
+
+    const response = await api.post('/audio-to-text', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    console.log(response)
+    return response.data.text
+  } catch (error) {
+    console.error('语音转文字请求失败:', error)
+    throw new Error('语音转文字失败')
+  }
+}

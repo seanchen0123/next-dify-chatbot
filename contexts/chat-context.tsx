@@ -46,6 +46,7 @@ interface ChatContextType {
   removeFile: (fileId: string) => void
   clearUploadedFiles: () => void
   textToSpeech: (messageId?: string, text?: string) => Promise<string | null>
+  speechToText: (file: File) => Promise<string | null>
   handlePasteEvent: (event: ClipboardEvent) => void
 }
 

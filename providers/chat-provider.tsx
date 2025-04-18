@@ -3,7 +3,7 @@
 import { useState, ReactNode, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { deleteConversation, getConversations } from '@/services/client/conversations'
-import { getFormattedMessages, getNextRoundSuggestions, stopMessageGeneration, textToAudio } from '@/services/client/messages'
+import { audioToText, getFormattedMessages, getNextRoundSuggestions, stopMessageGeneration, textToAudio } from '@/services/client/messages'
 import { ChatRequest, UploadFileItem } from '@/types/chat'
 import { EventData, MessageEndEvent, MessageEvent, WorkflowFinishedEvent } from '@/types/events'
 import { DisplayMessage, MessageFile } from '@/types/message'
@@ -538,6 +538,7 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
     }
   }
 
+  // 文件粘贴事件处理
   const handlePasteEvent = async (event: ClipboardEvent) => {
     const items = event.clipboardData?.items;
     if (!items) return;
@@ -563,6 +564,19 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
           }
         }
       }
+    }
+  }
+
+  // 语音转文字
+  const speechToText = async (file: File) => {
+    if (!userId) return null
+
+    try {
+      const text = await audioToText(file, userId)
+      return text
+    } catch (error) {
+      console.error('文字转语音失败:', error)
+      throw error
     }
   }
 
@@ -606,6 +620,7 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
         removeFile: handleRemoveFile,
         clearUploadedFiles,
         textToSpeech,
+        speechToText,
         handlePasteEvent
       }}
     >
