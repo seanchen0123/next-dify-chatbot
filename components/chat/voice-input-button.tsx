@@ -4,8 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Mic, MicOff, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useIsMobile } from '@/hooks/use-mobile'
-import { toast } from 'sonner'
+import { toast } from '@/components/ui/custom-toast'
 
 // 修改接口定义，添加新的属性
 interface VoiceInputButtonProps {

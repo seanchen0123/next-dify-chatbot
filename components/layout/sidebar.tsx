@@ -54,6 +54,7 @@ import relativeTime from 'dayjs/plugin/relativeTime' // 相对时间插件
 import { renameConversation } from '@/services/client/conversations'
 import { ThemeToggle } from '../theme-toggle'
 import { useApp } from '@/contexts/app-context'
+import { toast } from '../ui/custom-toast'
 
 // 初始化 dayjs 插件
 dayjs.extend(relativeTime)
@@ -93,8 +94,10 @@ export function Sidebar({}: SidebarProps) {
       loadConversations()
 
       setRenameDialogOpen(false)
+      toast.success('对话重命名成功')
     } catch (error) {
       console.error('重命名对话失败:', error)
+      toast.error('对话重命名失败')
     }
   }
 
@@ -264,15 +267,19 @@ export function Sidebar({}: SidebarProps) {
                                     ? 'opacity-100'
                                     : 'opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100'
                                 )}
-                                onClick={e => e.preventDefault()}
+                                onClick={e => {
+                                  e.stopPropagation() // 阻止事件冒泡
+                                  e.preventDefault()
+                                }}
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                                 <span className="sr-only">打开菜单</span>
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" onClick={e => e.stopPropagation()}>
                               <DropdownMenuItem
                                 onClick={e => {
+                                  e.stopPropagation(); // 阻止事件冒泡
                                   e.preventDefault()
                                   openRenameDialog(conversation)
                                 }}
@@ -283,6 +290,7 @@ export function Sidebar({}: SidebarProps) {
                               <DropdownMenuItem
                                 className="text-red-500 focus:text-red-500"
                                 onClick={e => {
+                                  e.stopPropagation(); // 阻止事件冒泡
                                   e.preventDefault()
                                   openDeleteDialog(conversation)
                                 }}
@@ -344,7 +352,13 @@ export function Sidebar({}: SidebarProps) {
             <AlertDialogAction
               onClick={() => {
                 if (currentConversation) {
-                  deleteConversation(currentConversation.id)
+                  try {
+                    deleteConversation(currentConversation.id)
+                    toast.success('对话删除成功')
+                  } catch (error) {
+                    console.error('删除对话失败:', error)
+                    toast.error('删除对话失败')
+                  }
                 }
                 setDeleteDialogOpen(false)
               }}

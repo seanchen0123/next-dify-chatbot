@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Progress } from '@/components/ui/progress'
 import { useApp } from '@/contexts/app-context'
 import { useChat } from '@/contexts/chat-context'
-import { toast } from 'sonner'
+import { toast } from '@/components/ui/custom-toast'
 import { validateFile } from '@/lib/file-utils'
 
 export function FileUpload() {
