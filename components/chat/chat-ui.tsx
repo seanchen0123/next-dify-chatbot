@@ -277,7 +277,7 @@ export function ChatUI({ chatId }: ChatUIProps) {
                     >
                       {generateLoading ? (
                         <>
-                          <span className="h-4 w-4 mr-1 bg-background rounded-full animate-pulse"></span>
+                          <span className="h-4 w-4 mr-1 bg-gray-100 rounded-full animate-pulse"></span>
                           停止
                         </>
                       ) : (

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getConversations } from '@/services/server/conversations';
 
+// 标记此路由为动态路由，不进行静态生成
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     // 从 URL 参数中获取查询参数

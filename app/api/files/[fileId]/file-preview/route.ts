@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import serverClient from '@/lib/server-client'
+
+// 标记此路由为动态路由，不进行静态生成
+export const dynamic = 'force-dynamic'
 
 export async function GET(
   req: NextRequest,

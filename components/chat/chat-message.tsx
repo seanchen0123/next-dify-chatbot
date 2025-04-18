@@ -444,7 +444,7 @@ export function ChatMessage({
               </div>
               <div
                 className={cn(
-                  'prose prose-sm dark:prose-invert prose-pre:border-0 prose-pre:bg-transparent',
+                  'prose prose-sm dark:prose-invert prose-pre:border-0 prose-pre:bg-transparent w-full',
                   isMobile ? 'pr-14' : 'pr-0'
                 )}
               >

@@ -1,5 +1,6 @@
 import { ErrorPage } from "@/components/error-page"
+import { Suspense } from "react"
 
 export default function ErrorRoute() {
-  return <ErrorPage />
+  return <Suspense fallback={null}><ErrorPage /></Suspense>
 }

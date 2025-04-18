@@ -1,10 +1,6 @@
 import serverClient from '@/lib/server-client'
 import { NextRequest, NextResponse } from 'next/server'
 
-export const config = {
-  runtime: 'edge'
-}
-
 export async function POST(req: NextRequest) {
   try {
     // 解析请求体

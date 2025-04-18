@@ -5,10 +5,6 @@ import { NextRequest, NextResponse } from 'next/server'
 const API_KEY = process.env.CHAT_API_KEY
 const API_BASE_URL = process.env.CHAT_API_BASE_URL
 
-export const config = {
-  runtime: 'edge'
-}
-
 export async function POST(req: NextRequest) {
   try {
     // 解析请求体
