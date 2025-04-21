@@ -135,13 +135,13 @@ export function ChatUI({ chatId }: ChatUIProps) {
 
       // 设置转写状态为true
       setIsTranscribing(true)
-      
+
       // 调用语音转文字服务
       const text = await speechToText(audioFile)
 
       // 如果有返回文本，设置到输入框
       if (text) {
-        const cleanedText = text.replace(/<\|.*?\|>/g, '');
+        const cleanedText = text.replace(/<\|.*?\|>/g, '')
         setInput(cleanedText)
         // 聚焦输入框
         textareaRef.current?.focus()
@@ -218,7 +218,7 @@ export function ChatUI({ chatId }: ChatUIProps) {
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={isTranscribing ? "语音转文字中..." : "输入消息..."}
+                    placeholder={isTranscribing ? '语音转文字中...' : '输入消息...'}
                     className={cn(
                       'min-h-[40px] max-h-[140px] resize-none border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm',
                       uploadedFiles.length > 0 ? 'mt-1' : 'mt-0'
@@ -262,12 +262,14 @@ export function ChatUI({ chatId }: ChatUIProps) {
                     </TooltipProvider>
                   </div>
                   <div className="flex items-center gap-3">
-                    <VoiceInputButton 
-                      onAudioCaptured={handleAudioCaptured} 
-                      disabled={generateLoading || isTranscribing}
-                      onRecordingStateChange={setIsRecording}
-                      isTranscribing={isTranscribing}
-                    />
+                    {appParameters?.speech_to_text.enabled && (
+                      <VoiceInputButton
+                        onAudioCaptured={handleAudioCaptured}
+                        disabled={generateLoading || isTranscribing}
+                        onRecordingStateChange={setIsRecording}
+                        isTranscribing={isTranscribing}
+                      />
+                    )}
                     <Button
                       type={generateLoading ? 'button' : 'submit'}
                       size="sm"
