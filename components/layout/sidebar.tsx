@@ -217,7 +217,12 @@ export function Sidebar({}: SidebarProps) {
           <Button
             variant="outline"
             className="w-full bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 flex items-center justify-center gap-2 py-4"
-            onClick={async () => await startNewChat()}
+            onClick={async () => {
+              await startNewChat()
+              if (isMobile) {
+                setOpenMobile(false)
+              }
+            }}
           >
             <MessageCirclePlus className="h-4 w-4" />
             <span className="font-medium">开启新对话</span>

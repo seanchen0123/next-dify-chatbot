@@ -89,8 +89,11 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
   useEffect(() => {
     const init = async () => {
       if (conversationId && userId) {
-        await loadMessages(conversationId, userId)
+        setMessages([]) // 清空消息列表
+        setSuggestionQuestions([])
+        setUploadedFiles([])
         setChatStarted(true)
+        await loadMessages(conversationId, userId)
       } else {
         setMessages([])
       }
@@ -110,6 +113,8 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
     setConversationId('')
     setChatStarted(true)
     setMessages([]) // 清空消息列表
+    setSuggestionQuestions([])
+    setUploadedFiles([])
 
     // 如果是从布局中调用，需要导航到/chat
     if (window.location.pathname !== '/chat') {
