@@ -72,74 +72,87 @@ export function ChatMessage({
   // 处理思考过程内容
   useEffect(() => {
     if (role === 'assistant') {
-      // 检查是否包含思考过程的开始标签
-      const hasOpeningTag = content.includes('<details')
+      let thinkingContent: string | null = null
+      let mainContent = content
+      let processed = false // 标记是否已处理
 
-      // 检查是否包含完整的思考过程（开始和结束标签）
-      const hasClosingTag = content.includes('</details>')
+      // 1. 检查 <think> 标签
+      const thinkStartTag = '<think>'
+      const thinkEndTag = '</think>'
+      const thinkStartIndex = content.indexOf(thinkStartTag)
+      const thinkEndIndex = content.indexOf(thinkEndTag)
 
-      if (hasOpeningTag) {
-        let thinkingContent = null
-        let mainContent = ''
+      if (thinkStartIndex !== -1) {
+        if (thinkEndIndex !== -1 && thinkEndIndex > thinkStartIndex) {
+          // 找到完整的 <think>...</think>
+          thinkingContent = content.substring(thinkStartIndex + thinkStartTag.length, thinkEndIndex).trim()
+          mainContent = content.substring(thinkEndIndex + thinkEndTag.length).trim()
+        } else {
+          // 只有开始标签 <think>
+          thinkingContent = content.substring(thinkStartIndex + thinkStartTag.length).trim()
+          mainContent = '' // 假设开始标签后的所有内容都是思考过程，直到流结束
+        }
+        processed = true
+      }
 
-        if (hasClosingTag) {
-          // 完整的思考过程
-          const detailsStartIndex = content.indexOf('<details')
-          const detailsEndIndex = content.indexOf('</details>') + '</details>'.length
+      // 2. 如果没有处理过 <think> 标签，则检查 <details> 标签 (现有逻辑)
+      if (!processed) {
+        const detailsStartTag = '<details' // 使用 '<details' 以匹配可能带属性的标签
+        const detailsEndTag = '</details>'
+        const detailsStartIndex = content.indexOf(detailsStartTag)
+        const detailsEndIndex = content.indexOf(detailsEndTag)
 
-          if (detailsStartIndex !== -1 && detailsEndIndex !== -1) {
-            const detailsContent = content.substring(detailsStartIndex, detailsEndIndex)
+        if (detailsStartIndex !== -1) {
+          if (detailsEndIndex !== -1 && detailsEndIndex > detailsStartIndex) {
+            // 完整的 <details>...</details>
+            const detailsFullTagEndIndex = detailsEndIndex + detailsEndTag.length
+            const detailsContent = content.substring(detailsStartIndex, detailsFullTagEndIndex)
 
-            // 提取 summary 标签之后的内容
-            const summaryEndIndex = detailsContent.indexOf('</summary>')
+            const summaryEndTag = '</summary>'
+            const summaryEndIndex = detailsContent.indexOf(summaryEndTag)
+
             if (summaryEndIndex !== -1) {
               thinkingContent = detailsContent
-                .substring(summaryEndIndex + '</summary>'.length, detailsContent.length - '</details>'.length)
+                .substring(summaryEndIndex + summaryEndTag.length, detailsContent.length - detailsEndTag.length)
                 .trim()
             } else {
               // 没有 summary 标签，直接提取 details 内容
-              thinkingContent = detailsContent
-                .substring(detailsContent.indexOf('>') + 1, detailsContent.length - '</details>'.length)
-                .trim()
-            }
-
-            // 提取主要内容（details 标签之后的内容）
-            mainContent = content.substring(detailsEndIndex).trim()
-          }
-        } else {
-          // 不完整的思考过程（只有开始标签）
-          const detailsStartIndex = content.indexOf('<details')
-
-          if (detailsStartIndex !== -1) {
-            const detailsContent = content.substring(detailsStartIndex)
-
-            // 提取 summary 标签之后的内容
-            const summaryEndIndex = detailsContent.indexOf('</summary>')
-            if (summaryEndIndex !== -1) {
-              thinkingContent = detailsContent.substring(summaryEndIndex + '</summary>'.length).trim()
-            } else {
-              // 没有 summary 标签或者 summary 标签不完整
-              const openTagEndIndex = detailsContent.indexOf('>')
-              if (openTagEndIndex !== -1) {
-                thinkingContent = detailsContent.substring(openTagEndIndex + 1).trim()
-              } else {
-                thinkingContent = '思考中...'
+              const openingTagEndIndex = detailsContent.indexOf('>')
+              if (openingTagEndIndex !== -1) {
+                thinkingContent = detailsContent
+                  .substring(openingTagEndIndex + 1, detailsContent.length - detailsEndTag.length)
+                  .trim()
               }
             }
-          }
-        }
+            mainContent = content.substring(detailsFullTagEndIndex).trim()
+          } else {
+            // 不完整的 <details> 过程（只有开始标签）
+            const detailsContent = content.substring(detailsStartIndex)
+            const summaryEndTag = '</summary>'
+            const summaryEndIndex = detailsContent.indexOf(summaryEndTag)
 
-        setProcessedContent({
-          thinking: thinkingContent,
-          mainContent: mainContent
-        })
-      } else {
-        // 没有思考过程，全部作为主要内容
-        setProcessedContent({
-          thinking: null,
-          mainContent: content
-        })
+            if (summaryEndIndex !== -1) {
+              thinkingContent = detailsContent.substring(summaryEndIndex + summaryEndTag.length).trim()
+            } else {
+              const openingTagEndIndex = detailsContent.indexOf('>')
+              if (openingTagEndIndex !== -1) {
+                thinkingContent = detailsContent.substring(openingTagEndIndex + 1).trim()
+              } else {
+                // 如果连 '>' 都找不到，可能标签不完整
+                thinkingContent = '思考中...' // 或者取 <details 之后的所有内容
+              }
+            }
+            mainContent = '' // 假设开始标签后的所有内容都是思考过程
+          }
+          processed = true
+        }
       }
+
+      // 更新状态
+      setProcessedContent({
+        thinking: thinkingContent,
+        mainContent: mainContent
+      })
     } else {
       // 用户消息，不处理思考过程
       setProcessedContent({
