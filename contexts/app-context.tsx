@@ -4,6 +4,7 @@ import { createContext, useContext } from 'react'
 import { AppInfoResponse, AppParametersResponse, AppMetaResponse, FileUploadConfig } from '@/services/types/common'
 
 interface AppContextType {
+  appId: string
   appInfo: AppInfoResponse | null
   appParameters: AppParametersResponse | null
   appMeta: AppMetaResponse | null

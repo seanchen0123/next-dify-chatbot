@@ -7,6 +7,7 @@ import { UploadedFileResponse } from '@/services/types/common'
 import { UploadFileItem } from '@/types/chat'
 
 interface ChatContextType {
+  appId: string
   userId: string
   startNewChat: (initialPrompt?: string) => Promise<void>
   conversationId: string
@@ -30,6 +31,7 @@ interface ChatContextType {
   isLoadingConversations: boolean
   loadConversations: () => Promise<void>
   deleteConversation: (id: string) => Promise<void>
+  renameConversation: (id: string, name: string) => Promise<void>
   // 新增整体加载状态
   isLoading: boolean
   currentTaskId: string

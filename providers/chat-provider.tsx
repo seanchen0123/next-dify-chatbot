@@ -2,10 +2,10 @@
 
 import { useState, ReactNode, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { deleteConversation, getConversations } from '@/services/client/conversations'
+import { deleteConversation, getConversations, renameConversation } from '@/services/client/conversations'
 import { audioToText, getFormattedMessages, getNextRoundSuggestions, stopMessageGeneration, textToAudio } from '@/services/client/messages'
 import { ChatRequest, UploadFileItem } from '@/types/chat'
-import { EventData, MessageEndEvent, MessageEvent, MessageReplaceEvent, WorkflowFinishedEvent } from '@/types/events'
+import { EventData, MessageEndEvent, MessageEvent, MessageReplaceEvent } from '@/types/events'
 import { DisplayMessage, MessageFile } from '@/types/message'
 import { ApiConversation } from '@/types/conversation'
 import { ChatContext } from '@/contexts/chat-context'
@@ -15,7 +15,7 @@ import { UploadedFileResponse } from '@/services/types/common'
 import { fileToBase64, uploadFile } from '@/services/client/files'
 import { getFileTypeFromExtension, replacePreviewUrl } from '@/lib/file-utils'
 
-export function ChatProvider({ userId, children }: { userId: string; children: ReactNode }) {
+export function ChatProvider({ userId, appId, children }: { userId: string; appId: string; children: ReactNode }) {
   const router = useRouter()
   const { appParameters } = useApp()
   const [conversationId, setConversationId] = useState('')
@@ -51,7 +51,7 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
   const loadConversations = async () => {
     setIsLoadingConversations(true)
     try {
-      const res = await getConversations({ userId })
+      const res = await getConversations({ userId, appId })
       setConversations(res.conversations)
       setHasMoreMessages(res.hasMore)
     } catch (error) {
@@ -61,15 +61,24 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
     }
   }
 
+  // 重命名会话
+  const handleRenameConversation = async (id: string, name: string) => {
+    try {
+      await renameConversation({ conversationId: id, name, userId, appId  })
+    } catch (error) {
+      console.error('重命名对话失败:', error)
+    }
+  }
+
   // 删除会话
   const handleDeleteConversation = async (id: string) => {
     try {
-      await deleteConversation({ conversationId: id, userId })
+      await deleteConversation({ conversationId: id, userId, appId })
       setConversations(prev => prev.filter(conv => conv.id !== id))
 
       // 如果删除的是当前正在查看的对话，则重定向到新对话
       if (conversationId === id) {
-        router.replace(`/chat?userId=${userId}`)
+        router.replace(`/${appId}/chat?userId=${userId}`)
         setMessages([])
         setConversationId('')
       }
@@ -88,10 +97,9 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
   // 监听 conversationId 变化，加载历史消息
   useEffect(() => {
     const init = async () => {
-      if (conversationId && userId) {
-        setMessages([]) // 清空消息列表
-        setSuggestionQuestions([])
-        setUploadedFiles([])
+      setSuggestionQuestions([])
+      setUploadedFiles([])
+      if (conversationId && userId && appId) {
         setChatStarted(true)
         await loadMessages(conversationId, userId)
       } else {
@@ -99,7 +107,7 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
       }
     }
     init()
-  }, [conversationId, userId])
+  }, [appId, conversationId, userId])
 
   // 获取当前的会话
   useEffect(() => {
@@ -117,8 +125,8 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
     setUploadedFiles([])
 
     // 如果是从布局中调用，需要导航到/chat
-    if (window.location.pathname !== '/chat') {
-      router.replace(`/chat?userId=${userId}`)
+    if (window.location.pathname !== `/${appId}/chat`) {
+      router.replace(`/${appId}/chat?userId=${userId}`)
     }
 
     // 通过URL参数传递初始提示(如果有)
@@ -169,7 +177,8 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
     try {
       const res = await getFormattedMessages({
         conversationId,
-        userId
+        userId,
+        appId
       })
 
       if (firstId) {
@@ -202,18 +211,14 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
   // 专门处理message事件 - 增量累加模式
   function handleMessageEvent(eventData: MessageEvent) {
     setAnswerStarted(true)
-    const { answer, from_variable_selector, conversation_id, message_id } = eventData
+    const { answer, from_variable_selector, message_id } = eventData
     // 命中了输入内容审查
     if (!from_variable_selector) {
       updateLastMessage(answer, message_id)
       return
     }
-    if (from_variable_selector && from_variable_selector[0] === 'llm' && from_variable_selector[1] === 'text') {
+    if (from_variable_selector && from_variable_selector[1] === 'text') {
       console.log('收到消息:', answer)
-      // 保存会话ID
-      if (conversation_id && !conversationId) {
-        setConversationId(conversation_id)
-      }
       updateLastMessage(answer, message_id)
     } else if (
       from_variable_selector &&
@@ -250,7 +255,7 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
       }
       // 添加下一轮问题建议
       if (appParameters?.suggested_questions_after_answer.enabled && lastMessage.role === 'assistant') {
-        getNextRoundSuggestions({ messageId: lastMessage.id.replace('-assistant', ''), userId }).then(res => {
+        getNextRoundSuggestions({ messageId: lastMessage.id.replace('-assistant', ''), userId, appId }).then(res => {
           setSuggestionQuestions(res)
         })
       }
@@ -304,10 +309,6 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
           // 保存会话ID和消息ID，以便后续使用
           if (eventData.conversation_id) {
             receivedConversationId = eventData.conversation_id
-            // 更新状态中的conversationId
-            if (!conversationId) {
-              setConversationId(receivedConversationId)
-            }
           }
           if (eventData.message_id) messageId = eventData.message_id
 
@@ -415,7 +416,8 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
       conversation_id: conversationId || undefined,
       user: userId,
       files: formattedFiles,
-      inputs: {}
+      inputs: {},
+      appId
     }
 
     try {
@@ -428,7 +430,7 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
         // 更新状态
         setConversationId(newConversationId)
         // 使用 router.replace 更新 URL，不会刷新当前页面
-        router.replace(`/chat/${newConversationId}?userId=${userId}`)
+        router.replace(`/${appId}/chat/${newConversationId}?userId=${userId}`)
         // 刷新一下会话列表
         await loadConversations()
       }
@@ -450,7 +452,7 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
   const stopGeneration = async () => {
     if (!currentTaskId || !userId) return
     try {
-      await stopMessageGeneration({ taskId: currentTaskId, userId })
+      await stopMessageGeneration({ taskId: currentTaskId, userId, appId })
       // 停止成功后清除任务ID
       setCurrentTaskId('')
     } catch (error) {
@@ -486,6 +488,7 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
       }
 
       const userMessage = messages[userMessageIndex]
+      console.log('userMessage', userMessage)
 
       if (userMessage.files && userMessage.files.length > 0) {
         throw new Error('Dify Api暂不支持包含文件的消息重新生成')
@@ -512,7 +515,8 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
     try {
       const result = await uploadFile({
         file,
-        userId
+        userId,
+        appId
       })
 
       if (result && result.extension) {
@@ -549,7 +553,8 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
       const blob = await textToAudio({
         userId,
         messageId: messageId || '',
-        text: text || ''
+        text: text || '',
+        appId
       })
       const audioUrl = URL.createObjectURL(blob)
       return audioUrl
@@ -593,7 +598,7 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
     if (!userId) return null
 
     try {
-      const text = await audioToText(file, userId)
+      const text = await audioToText(file, userId, appId)
       return text
     } catch (error) {
       console.error('文字转语音失败:', error)
@@ -604,6 +609,7 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
   return (
     <ChatContext.Provider
       value={{
+        appId,
         userId,
         startNewChat,
         conversationId,
@@ -623,6 +629,7 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
         isLoadingConversations,
         loadConversations,
         deleteConversation: handleDeleteConversation,
+        renameConversation: handleRenameConversation,
         // 新增整体加载状态
         isLoading,
         currentTaskId,

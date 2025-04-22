@@ -9,7 +9,7 @@ import { AppContext } from '@/contexts/app-context'
 import { generateFileUploadConfig } from '@/lib/file-utils'
 
 
-export function AppProvider({ children }: { children: ReactNode }) {
+export function AppProvider({ children, appId }: { children: ReactNode, appId: string }) {
   const [appInfo, setAppInfo] = useState<AppInfoResponse | null>(null)
   const [appParameters, setAppParameters] = useState<AppParametersResponse | null>(null)
   const [appMeta, setAppMeta] = useState<AppMetaResponse | null>(null)
@@ -52,7 +52,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [appParameters])
 
   return (
-    <AppContext.Provider value={{ appInfo, appParameters, appMeta, isLoading, error, uploadConfig }}>
+    <AppContext.Provider value={{ appId, appInfo, appParameters, appMeta, isLoading, error, uploadConfig }}>
       {children}
     </AppContext.Provider>
   )
