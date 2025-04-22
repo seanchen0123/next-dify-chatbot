@@ -202,18 +202,14 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
   // 专门处理message事件 - 增量累加模式
   function handleMessageEvent(eventData: MessageEvent) {
     setAnswerStarted(true)
-    const { answer, from_variable_selector, conversation_id, message_id } = eventData
+    const { answer, from_variable_selector, message_id } = eventData
     // 命中了输入内容审查
     if (!from_variable_selector) {
       updateLastMessage(answer, message_id)
       return
     }
-    if (from_variable_selector && from_variable_selector[0] === 'llm' && from_variable_selector[1] === 'text') {
+    if (from_variable_selector && from_variable_selector[1] === 'text') {
       console.log('收到消息:', answer)
-      // 保存会话ID
-      if (conversation_id && !conversationId) {
-        setConversationId(conversation_id)
-      }
       updateLastMessage(answer, message_id)
     } else if (
       from_variable_selector &&
@@ -304,12 +300,10 @@ export function ChatProvider({ userId, children }: { userId: string; children: R
           // 保存会话ID和消息ID，以便后续使用
           if (eventData.conversation_id) {
             receivedConversationId = eventData.conversation_id
-            // 更新状态中的conversationId
-            if (!conversationId) {
-              setConversationId(receivedConversationId)
-            }
           }
-          if (eventData.message_id) messageId = eventData.message_id
+          if (eventData.message_id) {
+            messageId = eventData.message_id
+          }
 
           // 处理不同类型的event
           switch (eventData.event) {
