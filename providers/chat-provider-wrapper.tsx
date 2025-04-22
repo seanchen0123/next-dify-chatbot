@@ -6,7 +6,7 @@ import { ChatProvider } from './chat-provider'
 import { Suspense } from 'react'
 
 // 创建一个内部组件来使用 useSearchParams
-function ChatProviderWithParams({ children }: { children: React.ReactNode }) {
+function ChatProviderWithParams({ children, appId }: { children: React.ReactNode, appId: string }) {
   const searchParams = useSearchParams()
   const userId = searchParams.get('userId')
 
@@ -15,13 +15,13 @@ function ChatProviderWithParams({ children }: { children: React.ReactNode }) {
     return <ErrorPage title="Missing User ID" errorCode="400" />
   }
 
-  return <ChatProvider userId={userId}>{children}</ChatProvider>
+  return <ChatProvider userId={userId} appId={appId}>{children}</ChatProvider>
 }
 
-export function ChatProviderWrapper({ children }: { children: React.ReactNode }) {
+export function ChatProviderWrapper({ children, appId }: { children: React.ReactNode, appId: string }) {
   return (
     <Suspense fallback={null}>
-      <ChatProviderWithParams>{children}</ChatProviderWithParams>
+      <ChatProviderWithParams appId={appId}>{children}</ChatProviderWithParams>
     </Suspense>
   )
 }

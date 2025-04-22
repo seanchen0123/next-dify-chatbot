@@ -4,11 +4,12 @@ import { UploadFileParams, UploadedFileResponse } from '../types/common'
 // 上传文件
 export async function uploadFile(params: UploadFileParams): Promise<UploadedFileResponse> {
   try {
-    const { file, userId } = params
+    const { file, userId, appId = '' } = params
     
     const formData = new FormData()
     formData.append('file', file)
     formData.append('userId', userId)
+    formData.append('appId', appId)
     
     const response = await api.post('/files/upload', formData, {
       headers: {

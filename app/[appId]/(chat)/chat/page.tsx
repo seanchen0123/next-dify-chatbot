@@ -6,7 +6,7 @@ import EmptySkeleton from '@/components/chat/empty-skeleton'
 import { useApp } from '@/contexts/app-context'
 import { useChat } from '@/contexts/chat-context'
 
-export default function ChatPage() {
+export default function ChatPage({ params: { appId }}: { params: { appId: string }}) {
   const examplePrompts = [
     '解释量子计算的基本原理',
     '帮我写一个简单的React组件',
@@ -27,7 +27,7 @@ export default function ChatPage() {
   return (
     <div className="flex h-full flex-col">
       {chatStarted ? (
-        <ChatUI />
+        <ChatUI appId={appId} />
       ) : (
         <EmptyScreen
           appName={appName}

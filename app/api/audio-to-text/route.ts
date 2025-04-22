@@ -1,4 +1,4 @@
-import serverClient from '@/lib/server-client'
+import { createServerClient } from '@/lib/server-client'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
@@ -7,6 +7,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData()
     const file = formData.get('file') as File | null
     const userId = formData.get('userId') as string | null
+    const appId = formData.get('appId') as string | ''
 
     // 验证请求参数
     if (!userId) {
@@ -16,6 +17,8 @@ export async function POST(req: NextRequest) {
     if (!file) {
       return NextResponse.json({ error: '语音文件不能为空' }, { status: 400 })
     }
+
+    const serverClient = createServerClient(appId)
 
     // 验证文件类型
     const supportedFormats = ['mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm']

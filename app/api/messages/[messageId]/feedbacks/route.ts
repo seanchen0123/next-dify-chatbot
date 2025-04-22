@@ -5,7 +5,7 @@ export async function POST(request: NextRequest, { params }: { params: { message
   try {
     const { messageId } = params
     const body = await request.json()
-    const { userId, rating, content } = body
+    const { userId, rating, content, appId } = body
 
     // 验证必要参数
     if (!messageId || !userId) {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest, { params }: { params: { message
     }
 
     // 调用服务端函数提交反馈
-    await submitMessageFeedback({ messageId, rating, userId, content })
+    await submitMessageFeedback({ messageId, rating, userId, content, appId })
 
     return NextResponse.json({ success: true })
   } catch (error) {

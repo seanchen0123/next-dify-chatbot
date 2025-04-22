@@ -5,13 +5,14 @@ import { DeleteConversationParams, GetConversationsParams, RenameConversationPar
 // 获取会话列表
 export async function getConversations(params: GetConversationsParams): Promise<GetConversationsResult> {
   try {
-    const { lastId, limit = 20, sortBy = '-updated_at', userId } = params
+    const { lastId, limit = 20, sortBy = '-updated_at', userId, appId } = params
 
     const requestParams = {
       userId,
       last_id: lastId,
       limit,
-      sort_by: sortBy
+      sort_by: sortBy,
+      appId
     }
 
     const response = await api.get('/conversations', { params: requestParams })
@@ -28,10 +29,10 @@ export async function getConversations(params: GetConversationsParams): Promise<
 // 删除会话
 export async function deleteConversation(params: DeleteConversationParams): Promise<void> {
   try {
-    const { conversationId, userId } = params
+    const { conversationId, userId, appId } = params
 
     await api.delete(`/conversations/${conversationId}`, {
-      data: { userId }
+      data: { userId, appId }
     })
   } catch (error) {
     console.error('删除会话失败:', error)
@@ -42,12 +43,13 @@ export async function deleteConversation(params: DeleteConversationParams): Prom
 // 重命名会话
 export async function renameConversation(params: RenameConversationParams): Promise<void> {
   try {
-    const { conversationId, userId, name, autoGenerate = false } = params
+    const { conversationId, userId, name, autoGenerate = false, appId } = params
 
     await api.post(`/conversations/${conversationId}/name`, {
       userId,
       name,
-      auto_generate: autoGenerate
+      auto_generate: autoGenerate,
+      appId
     })
   } catch (error) {
     console.error('重命名会话失败:', error)

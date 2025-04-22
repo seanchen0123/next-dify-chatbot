@@ -1,11 +1,12 @@
-import serverClient from '@/lib/server-client'
+import { createServerClient } from '@/lib/server-client'
 import { MessagesResponse } from '@/types/message'
 import { GetMessagesParams, GetNextRoundSuggestionsParams, StopMessageParams, SubmitMessageFeedbackParams } from '../types/common'
 
 // 获取会话历史消息
 export async function getMessages(params: GetMessagesParams): Promise<MessagesResponse> {
   try {
-    const { conversationId, userId, firstId, limit = 20 } = params
+    const { conversationId, userId, firstId, limit = 20, appId } = params
+    const serverClient = createServerClient(appId)
 
     const requestParams = {
       conversation_id: conversationId,
@@ -28,7 +29,8 @@ export async function getMessages(params: GetMessagesParams): Promise<MessagesRe
 // 停止消息生成
 export async function stopMessageGeneration(params: StopMessageParams): Promise<void> {
   try {
-    const { userId, taskId } = params
+    const { userId, taskId, appId } = params
+    const serverClient = createServerClient(appId)
 
     await serverClient.post(`/chat-messages/${taskId}/stop`, {
       user: userId
@@ -41,7 +43,9 @@ export async function stopMessageGeneration(params: StopMessageParams): Promise<
 
 // 提交消息反馈（点赞/点踩）
 export async function submitMessageFeedback(params: SubmitMessageFeedbackParams): Promise<void> {
-  const { messageId, rating, userId, content } = params
+  const { messageId, rating, userId, content, appId } = params
+  const serverClient = createServerClient(appId)
+
   try {
     await serverClient.post(`/messages/${messageId}/feedbacks`, {
       rating,
@@ -56,7 +60,9 @@ export async function submitMessageFeedback(params: SubmitMessageFeedbackParams)
 
 // 获取下一轮建议问题列表
 export async function getNextRoundSuggestions(params: GetNextRoundSuggestionsParams): Promise<string[]> {
-  const { messageId, userId } = params
+  const { messageId, userId, appId } = params
+  const serverClient = createServerClient(appId)
+
   try {
     const response = await serverClient.get(`/messages/${messageId}/suggested`, {
       params: {

@@ -7,9 +7,14 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData()
     const user = formData.get('userId')
     const file = formData.get('file')
+    const appId = formData.get('appId')
 
     if (!user || typeof user !== 'string') {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
+    }
+
+    if (typeof appId !== 'string') {
+      return NextResponse.json({ error: 'AppID must be string' }, { status: 400 })
     }
 
     if (!file || !(file instanceof File)) {
@@ -17,7 +22,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 发送请求到实际API
-    const res = await uploadFile(file, user)
+    const res = await uploadFile(file, user, appId)
 
     return NextResponse.json(res)
   } catch (error) {

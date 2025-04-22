@@ -6,13 +6,14 @@ import { GetMessagesParams, GetNextRoundSuggestionsParams, StopMessageParams, Su
 // 获取会话历史消息（原始格式）
 export async function getMessages(params: GetMessagesParams): Promise<Message[]> {
   try {
-    const { conversationId, userId, firstId, limit = 20 } = params
+    const { conversationId, userId, firstId, limit = 20, appId } = params
 
     const requestParams = {
       conversation_id: conversationId,
       user: userId,
       first_id: firstId,
-      limit
+      limit,
+      appId
     }
 
     const response = await api.get<MessagesResponse>('/messages', {
@@ -29,14 +30,15 @@ export async function getMessages(params: GetMessagesParams): Promise<Message[]>
 // 获取格式化后的会话历史消息（用于前端显示）
 export async function getFormattedMessages(params: GetMessagesParams): Promise<GetFormattedMessagesResult> {
   try {
-    const { conversationId, userId, firstId, limit } = params
+    const { conversationId, userId, firstId, limit, appId } = params
 
     const response = await api.get<MessagesResponse>('/messages', {
       params: {
         conversation_id: conversationId,
         user: userId,
         first_id: firstId,
-        limit
+        limit,
+        appId
       }
     })
 
@@ -58,12 +60,13 @@ export async function getFormattedMessages(params: GetMessagesParams): Promise<G
 
 // 提交消息反馈（点赞/点踩）
 export async function submitMessageFeedback(params: SubmitMessageFeedbackParams): Promise<void> {
-  const { messageId, userId, rating, content } = params
+  const { messageId, userId, rating, content, appId } = params
   try {
     await api.post(`/messages/${messageId}/feedbacks`, {
       userId,
       rating,
-      content
+      content,
+      appId
     })
   } catch (error) {
     console.error('提交消息反馈失败:', error)
@@ -74,10 +77,11 @@ export async function submitMessageFeedback(params: SubmitMessageFeedbackParams)
 // 停止消息生成
 export async function stopMessageGeneration(params: StopMessageParams): Promise<void> {
   try {
-    const { taskId, userId } = params
+    const { taskId, userId, appId } = params
 
     await api.post(`/chat-messages/${taskId}/stop`, {
-      userId
+      userId,
+      appId
     })
   } catch (error) {
     console.error('停止消息生成失败:', error)
@@ -87,10 +91,11 @@ export async function stopMessageGeneration(params: StopMessageParams): Promise<
 
 // 获取下一轮建议问题列表
 export async function getNextRoundSuggestions(params: GetNextRoundSuggestionsParams): Promise<string[]> {
-  const { messageId, userId } = params
+  const { messageId, userId, appId } = params
   try {
     const response = await api.post(`/messages/${messageId}/suggested`, {
-      userId
+      userId,
+      appId
     })
     return response.data.data
   } catch (error) {
@@ -100,12 +105,13 @@ export async function getNextRoundSuggestions(params: GetNextRoundSuggestionsPar
 }
 
 export async function textToAudio(params: TextToAudioParams): Promise<Blob> {
-  const { messageId, text, userId } = params
+  const { messageId, text, userId, appId } = params
   try {
     const response = await api.post('/text-to-audio', {
       messageId,
       text,
-      userId
+      userId,
+      appId
     }, {
       responseType: 'blob'
     })
@@ -116,11 +122,12 @@ export async function textToAudio(params: TextToAudioParams): Promise<Blob> {
   }
 }
 
-export async function audioToText(audioFile: File, userId: string): Promise<string> {
+export async function audioToText(audioFile: File, userId: string, appId: string): Promise<string> {
   try {
     const formData = new FormData()
     formData.append('file', audioFile)
     formData.append('userId', userId)
+    formData.append('appId', appId || '')
 
     const response = await api.post('/audio-to-text', formData, {
       headers: {

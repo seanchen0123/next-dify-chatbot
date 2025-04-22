@@ -5,7 +5,7 @@ export async function POST(request: NextRequest, { params }: { params: { message
   try {
     const { messageId } = params
     const body = await request.json()
-    const { userId } = body
+    const { userId, appId } = body
 
     // 验证必要参数
     if (!messageId || !userId) {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest, { params }: { params: { message
     }
 
     // 调用服务端函数获取下一轮建议问题列表
-    const response = await getNextRoundSuggestions({ messageId, userId })
+    const response = await getNextRoundSuggestions({ messageId, userId, appId })
 
     return NextResponse.json(response)
   } catch (error) {

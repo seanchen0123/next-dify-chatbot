@@ -6,9 +6,10 @@ export interface User {
 export interface ChatRequest {
   query: string
   conversation_id?: string
-  user?: string
+  user: string
   files?: UploadFileItem[]
   inputs?: Record<string, any>
+  appId: string
 }
 
 export interface UploadFileItem {

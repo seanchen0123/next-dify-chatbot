@@ -45,7 +45,7 @@ export function ChatMessage({
 }: ChatMessageProps) {
   const { resolvedTheme } = useTheme()
   const isMobile = useIsMobile()
-  const { userId, regenerateMessage, textToSpeech } = useChat()
+  const { userId, regenerateMessage, textToSpeech, appId } = useChat()
   const [processedContent, setProcessedContent] = useState<{ thinking: string | null; mainContent: string }>({
     thinking: null,
     mainContent: content
@@ -198,7 +198,8 @@ export function ChatMessage({
         messageId,
         rating: newRating,
         userId,
-        content: newRating === 'like' ? '有帮助' : newRating === 'dislike' ? '没有帮助' : ''
+        content: newRating === 'like' ? '有帮助' : newRating === 'dislike' ? '没有帮助' : '',
+        appId
       })
 
       // 更新反馈状态
@@ -223,14 +224,8 @@ export function ChatMessage({
   // 重新生成回答
   const handleRegenerate = async () => {
     if (isRegenerating || role !== 'assistant') return
-
     setIsRegenerating(true)
     try {
-      if (files && files.length > 0) {
-        toast.error('参数错误', {
-          description: 'Dify Api暂不支持包含文件的消息重新生成'
-        })
-      }
       await regenerateMessage(id)
     } catch (error) {
       console.error('重新生成失败:', error)

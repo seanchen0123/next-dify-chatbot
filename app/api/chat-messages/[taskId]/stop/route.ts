@@ -5,7 +5,7 @@ export async function POST(request: NextRequest, { params }: { params: { taskId:
   try {
     const { taskId } = params
     const body = await request.json()
-    const { userId } = body
+    const { userId, appId } = body
 
     if (!userId) {
       return NextResponse.json({ error: '缺少用户ID' }, { status: 400 })
@@ -13,7 +13,8 @@ export async function POST(request: NextRequest, { params }: { params: { taskId:
 
     await stopMessageGeneration({
       userId,
-      taskId
+      taskId,
+      appId
     })
 
     return NextResponse.json({ success: true })

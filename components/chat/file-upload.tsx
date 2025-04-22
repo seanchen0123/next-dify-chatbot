@@ -58,18 +58,6 @@ export function FileUpload() {
     }
   }
   
-  // 移除已上传文件
-  const handleRemoveFile = (fileId: string) => {
-    const newFiles = uploadedFiles.filter(file => file.id !== fileId)
-    if (newFiles.length === 0) {
-      clearUploadedFiles()
-    } else {
-      // 这里需要在 chat-context 中添加一个更新部分文件的方法
-      // 暂时使用 clearUploadedFiles 替代
-      clearUploadedFiles()
-    }
-  }
-  
   // 如果文件上传功能未启用，则不渲染任何内容
   if (!uploadConfig.enabled) {
     return null
@@ -87,16 +75,7 @@ export function FileUpload() {
         multiple={uploadConfig.maxFiles > 1}
         disabled={uploadingFiles || uploadedFiles.length >= uploadConfig.maxFiles}
       />
-      
-      {/* 已上传文件预览 */}
-      {/* {uploadedFiles.length > 0 && (
-        <FilePreview 
-          files={uploadedFiles} 
-          onRemove={handleRemoveFile} 
-          disabled={uploadingFiles}
-        />
-      )} */}
-      
+  
       {/* 文件上传进度条 */}
       {uploadingFiles && (
         <div className="px-3 pt-2">

@@ -1,9 +1,6 @@
+import { getAppConfig } from '@/lib/app-config'
 import { processStream } from '@/lib/utils'
 import { NextRequest, NextResponse } from 'next/server'
-
-// 从环境变量获取API密钥和基础URL
-const API_KEY = process.env.CHAT_API_KEY
-const API_BASE_URL = process.env.CHAT_API_BASE_URL
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,13 +8,15 @@ export async function POST(req: NextRequest) {
     const requestData = await req.json()
 
     // 获取必要参数
-    const { query, files, conversation_id, user } = requestData
+    const { query, files, conversation_id, user, appId } = requestData
+    const { apiKey, baseUrl } = getAppConfig(appId)
+    console.log('appId', appId, 'apiKey:', apiKey)  
 
     if (!query || typeof query !== 'string') {
       return NextResponse.json({ error: 'Invalid query' }, { status: 400 })
     }
 
-    if (!API_KEY) {
+    if (!apiKey) {
       return NextResponse.json({ error: 'API key not configured' }, { status: 500 })
     }
 
@@ -32,10 +31,10 @@ export async function POST(req: NextRequest) {
     }
 
     // 发送请求到实际API
-    const response = await fetch(`${API_BASE_URL}/chat-messages`, {
+    const response = await fetch(`${baseUrl}/chat-messages`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(chatRequestBody)

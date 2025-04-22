@@ -6,7 +6,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     const conversationId = params.id
     // 解析请求体
     const body = await request.json()
-    const { userId } = body
+    const { userId, appId } = body
 
     if (!userId) {
       return NextResponse.json({ error: '缺少 userId 参数' }, { status: 400 })
@@ -14,7 +14,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
     await deleteConversation({
       userId,
-      conversationId
+      conversationId,
+      appId
     })
 
     return NextResponse.json({ success: true })

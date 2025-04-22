@@ -14,6 +14,7 @@ import { nanoid } from 'nanoid'
 import { UploadedFileResponse } from '@/services/types/common'
 import { fileToBase64, uploadFile } from '@/services/client/files'
 import { getFileTypeFromExtension, replacePreviewUrl } from '@/lib/file-utils'
+import { toast } from '@/components/ui/custom-toast'
 
 export function ChatProvider({ userId, appId, children }: { userId: string; appId: string; children: ReactNode }) {
   const router = useRouter()
@@ -490,9 +491,10 @@ export function ChatProvider({ userId, appId, children }: { userId: string; appI
       }
 
       const userMessage = messages[userMessageIndex]
-      console.log('userMessage', userMessage)
+      // console.log('userMessage', userMessage)
 
       if (userMessage.files && userMessage.files.length > 0) {
+        toast.error('Dify Api暂不支持包含文件的消息重新生成')
         throw new Error('Dify Api暂不支持包含文件的消息重新生成')
         // TODO: 支持重新生成包含文件的用户消息
       }

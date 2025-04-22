@@ -12,6 +12,8 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('user')
     const firstId = searchParams.get('first_id') || undefined
     const limit = parseInt(searchParams.get('limit') || '20', 10)
+    const appId = searchParams.get('appId') || ''
+
 
     if (!conversationId) {
       return NextResponse.json({ error: '缺少会话ID参数' }, { status: 400 })
@@ -26,7 +28,8 @@ export async function GET(request: NextRequest) {
       conversationId,
       userId,
       firstId,
-      limit
+      limit,
+      appId
     })
 
     return NextResponse.json(messages)

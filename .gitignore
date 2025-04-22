@@ -40,3 +40,6 @@ next-env.d.ts
 # prisma
 /prisma/migrations
 /prisma/*.db*
+
+# 添加以下行到您的 .gitignore 文件中
+config/apps.data.ts

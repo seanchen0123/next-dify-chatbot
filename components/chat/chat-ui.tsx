@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils'
 import { VoiceInputButton } from './voice-input-button'
 
 interface ChatUIProps {
+  appId?: string
   chatId?: string
 }
 

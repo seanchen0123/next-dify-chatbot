@@ -7,7 +7,7 @@ export async function POST(
 ) {
   try {
     const body = await request.json()
-    const { userId, name, auto_generate } = body
+    const { userId, name, auto_generate, appId } = body
     
     if (!userId) {
       return NextResponse.json(
@@ -20,7 +20,8 @@ export async function POST(
       userId,
       conversationId: params.id,
       name,
-      autoGenerate: auto_generate
+      autoGenerate: auto_generate,
+      appId
     })
 
     return NextResponse.json({ success: true })

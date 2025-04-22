@@ -5,11 +5,13 @@ export interface GetConversationsParams {
   lastId?: string
   limit?: number
   sortBy?: string
+  appId: string
 }
 
 export interface DeleteConversationParams {
   conversationId: string
   userId: string
+  appId: string
 }
 
 export interface GetMessagesParams {
@@ -17,6 +19,7 @@ export interface GetMessagesParams {
   userId: string
   firstId?: string
   limit?: number
+  appId: string
 }
 
 export interface GetFormattedMessagesResult {
@@ -29,11 +32,13 @@ export interface RenameConversationParams {
   conversationId: string
   name: string
   autoGenerate?: boolean
+  appId: string
 }
 
 export interface StopMessageParams {
   userId: string
   taskId: string
+  appId: string
 }
 
 export interface SubmitMessageFeedbackParams {
@@ -41,11 +46,13 @@ export interface SubmitMessageFeedbackParams {
   userId: string
   rating: 'like' | 'dislike' | null
   content?: string
+  appId: string
 }
 
 export interface GetNextRoundSuggestionsParams {
   messageId: string
   userId: string
+  appId: string
 }
 
 // 新增应用信息响应类型
@@ -135,6 +142,7 @@ export interface AppMetaResponse {
 export interface UploadFileParams {
   file: File
   userId: string
+  appId: string
 }
 
 export interface UploadedFileResponse {
@@ -168,4 +176,5 @@ export interface TextToAudioParams {
   messageId: string
   text: string
   userId: string
+  appId: string
 }

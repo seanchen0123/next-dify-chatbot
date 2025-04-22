@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { Trash2, Search, Loader2, Edit, MoreHorizontal, MessageCirclePlus } from 'lucide-react'
+import { Trash2, Search, Loader2, Edit, MoreHorizontal, MessageCirclePlus, House } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -53,6 +53,8 @@ import relativeTime from 'dayjs/plugin/relativeTime' // 相对时间插件
 import { ThemeToggle } from '../theme-toggle'
 import { useApp } from '@/contexts/app-context'
 import { toast } from '../ui/custom-toast'
+import { hasDefinedAppList } from '@/config/apps'
+import { useTheme } from 'next-themes'
 
 // 初始化 dayjs 插件
 dayjs.extend(relativeTime)
@@ -73,6 +75,7 @@ export function Sidebar({}: SidebarProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
   const isMobile = useIsMobile()
+  const { resolvedTheme } = useTheme()
 
   // 从 ChatContext 获取会话列表相关状态和方法
   const { startNewChat, conversations, isLoadingConversations, loadConversations, deleteConversation, renameConversation, userId } =
@@ -80,6 +83,10 @@ export function Sidebar({}: SidebarProps) {
 
   const { appInfo, appId } = useApp()
   const appName = appInfo?.name || ''
+
+  const hasApps = useMemo(() => {
+    return hasDefinedAppList()
+  }, [hasDefinedAppList])
 
   // 重命名对话
   const handleRenameConversation = async () => {
@@ -192,10 +199,9 @@ export function Sidebar({}: SidebarProps) {
 
   return (
     <ShadcnSidebar>
-      <SidebarHeader className="h-14">
-        <div className="flex items-center justify-between w-full h-full">
+      <SidebarHeader className='my-2'>
+        <div className="flex items-center justify-between w-full h-10 max-h-10">
           {isMobile && <SidebarTrigger />}
-
           <div className="flex-1 flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={handleSearch} className="h-7 w-7">
               <Search className="scale-125" />
@@ -213,24 +219,22 @@ export function Sidebar({}: SidebarProps) {
             )}
           </div>
         </div>
+        <Button
+          variant="outline"
+          className="py-4 mt-2 w-full bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 flex items-center justify-center gap-2"
+          onClick={async () => {
+            await startNewChat()
+            if (isMobile) {
+              setOpenMobile(false)
+            }
+          }}
+        >
+          <MessageCirclePlus className="h-4 w-4" />
+          <span className="font-medium">开启新对话</span>
+        </Button>
       </SidebarHeader>
 
       <SidebarContent>
-        <div className="px-2 mt-2">
-          <Button
-            variant="outline"
-            className="w-full bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 flex items-center justify-center gap-2 py-4"
-            onClick={async () => {
-              await startNewChat()
-              if (isMobile) {
-                setOpenMobile(false)
-              }
-            }}
-          >
-            <MessageCirclePlus className="h-4 w-4" />
-            <span className="font-medium">开启新对话</span>
-          </Button>
-        </div>
 
         <SidebarMenu className="px-2">
           {isLoadingConversations ? (
@@ -320,9 +324,24 @@ export function Sidebar({}: SidebarProps) {
       </SidebarContent>
 
       <SidebarFooter>
-        <div className='p-2 flex items-center justify-between'>
-          <p className='text-sm text-muted-foreground opacity-70'>{appName && `© ${appName} ${year}`}</p>
-          {isMobile && <ThemeToggle />}
+        <div className='pr-4'>
+          {!isLoadingConversations && hasApps && 
+            <Button
+              variant="outline"
+              className={cn('w-full mb-2 py-4 flex items-center justify-center gap-2', 
+                resolvedTheme === 'dark' ? 'bg-amber-300/10 hover:bg-amber-300/20 text-amber-300 border-amber-300/20'
+                : 'bg-amber-400/10 hover:bg-amber-400/20 text-amber-500 border-amber-500/20'
+              )}
+              onClick={() => router.replace(`/?userId=${userId}`)}
+            >
+              <House />
+              <span className="font-medium">返回首页</span>
+            </Button>
+          }
+          <div className='py-2 pl-2 flex items-center justify-between'>
+            <p className='text-sm text-muted-foreground opacity-70'>{appName && `© ${appName} ${year}`}</p>
+            {isMobile && <ThemeToggle />}
+          </div>
         </div>
       </SidebarFooter>
 

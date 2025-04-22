@@ -61,7 +61,7 @@ export function FilePreview({
   let renderFiles: RenderFile[] = []
   if (inputPreview && inputFiles && inputFiles.length > 0) {
     renderFiles = inputFiles.map(file => ({
-      extension: file.filename.split('.')[1] || '',
+      extension: file.filename.split('.')[file.filename.split('.').length - 1] || '',
       name: file.filename,
       url: file.url,
       size: file.size,

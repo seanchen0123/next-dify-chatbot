@@ -25,9 +25,9 @@ export function AppProvider({ children, appId }: { children: ReactNode, appId: s
       try {
         // 并行获取所有应用数据
         const [infoResponse, parametersResponse, metaResponse] = await Promise.all([
-          getAppInfo(),
-          getAppParameters(),
-          getAppMeta()
+          getAppInfo(appId),
+          getAppParameters(appId),
+          getAppMeta(appId)
         ])
         
         setAppInfo(infoResponse)

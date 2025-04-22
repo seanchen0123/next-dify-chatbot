@@ -1,3 +1,4 @@
+import { getAppConfig } from '@/lib/app-config'
 import { NextRequest, NextResponse } from 'next/server'
 
 // 标记此路由为动态路由，不进行静态生成
@@ -14,8 +15,10 @@ export async function GET(
       return NextResponse.json({ error: '文件ID不能为空' }, { status: 400 })
     }
 
-    const baseURL = process.env.CHAT_API_BASE_URL
-    if (!baseURL) {
+    const appId = req.nextUrl.searchParams.get('appId') || ''
+    const { apiKey, baseUrl } = getAppConfig(appId)
+
+    if (!baseUrl) {
       return NextResponse.json({ error: 'API基础URL未配置' }, { status: 500 })
     }
     
@@ -25,12 +28,12 @@ export async function GET(
     const sign = req.nextUrl.searchParams.get('sign')
 
     // 构建预览URL
-    const previewUrl = `${baseURL.replace('/v1', '')}/files/${fileId}/file-preview?timestamp=${timestamp}&nonce=${nonce}&sign=${sign}`
+    const previewUrl = `${baseUrl.replace('/v1', '')}/files/${fileId}/file-preview?timestamp=${timestamp}&nonce=${nonce}&sign=${sign}`
     
     const response = await fetch(previewUrl, {
       headers: {
         // 如果需要，可以添加认证头
-        'Authorization': `Bearer ${process.env.CHAT_API_KEY}`
+        'Authorization': `Bearer ${apiKey}`
       }
     })
     

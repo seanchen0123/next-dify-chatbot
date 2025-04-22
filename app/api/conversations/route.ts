@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     const lastId = searchParams.get('last_id') || undefined;
     const limit = parseInt(searchParams.get('limit') || '20', 10);
     const sortBy = searchParams.get('sort_by') || '-updated_at';
+    const appId = searchParams.get('appId') || '';
 
     if (!userId) {
       return NextResponse.json(
@@ -25,7 +26,8 @@ export async function GET(request: NextRequest) {
       userId,
       lastId,
       limit,
-      sortBy
+      sortBy,
+      appId
     });
 
     return NextResponse.json(conversations);

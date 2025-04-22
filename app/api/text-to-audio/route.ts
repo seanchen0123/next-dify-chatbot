@@ -1,10 +1,10 @@
-import serverClient from '@/lib/server-client'
+import { createServerClient } from '@/lib/server-client'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
   try {
     // 解析请求体
-    const { messageId, text, userId } = await req.json()
+    const { messageId, text, userId, appId } = await req.json()
 
     if (!userId) {
       return NextResponse.json({ error: '用户标识不能为空' }, { status: 400 })
@@ -14,10 +14,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '必须提供 message_id 或 text 参数' }, { status: 400 })
     }
 
+    const serverClient = createServerClient(appId)
+
     const response = await serverClient.post('/text-to-audio', {
       message_id: messageId,
       text,
-      user: userId
+      user: userId,
+      appId
     }, {
       responseType: 'stream'
     })
