@@ -43,47 +43,49 @@ export async function processStream(
  * @returns 转换后的DisplayMessage列表
  */
 export function formatMessagesToDisplay(messages: Message[]): DisplayMessage[] {
-  return messages.map(message => {
-    // 创建用户消息
-    let userFiles: MessageFile[] = []
-    let assistantFiles: MessageFile[] = []
-    if (message.message_files && message.message_files.length > 0) {
-      message.message_files.forEach(file => {
-        file.url = `/api${file.url}`
-        if (file.belongs_to === 'user') {
-          userFiles.push(file)
-        } else {
-          assistantFiles.push(file)
+  return messages
+    .filter(message => message.status === 'normal') // 只处理 status 为 normal 的消息
+    .map(message => {
+      // 创建用户消息
+      let userFiles: MessageFile[] = []
+      let assistantFiles: MessageFile[] = []
+      if (message.message_files && message.message_files.length > 0) {
+        message.message_files.forEach(file => {
+          file.url = `/api${file.url}`
+          if (file.belongs_to === 'user') {
+            userFiles.push(file)
+          } else {
+            assistantFiles.push(file)
+          }
+        })
+      }
+      const userMessage: DisplayMessage = {
+        id: `${message.id}-user`,
+        role: 'user',
+        content: message.query,
+        createdAt: new Date(parseInt(message.created_at) * 1000),
+        files: userFiles
+      }
+
+      // 创建助手消息（如果有回答）
+      const assistantMessages: DisplayMessage[] = [];
+      if (message.answer) {
+        const assistantMessage: DisplayMessage = {
+          id: `${message.id}-assistant`,
+          role: 'assistant',
+          content: replacePreviewUrl(message.answer),
+          createdAt: new Date(parseInt(message.created_at) * 1000 + 1000), // 助手消息时间稍晚于用户消息
+          files: assistantFiles
         }
-      })
-    }
-    const userMessage: DisplayMessage = {
-      id: `${message.id}-user`,
-      role: 'user',
-      content: message.query,
-      createdAt: new Date(parseInt(message.created_at) * 1000),
-      files: userFiles
-    };
-
-    // 创建助手消息（如果有回答）
-    const assistantMessages: DisplayMessage[] = [];
-    if (message.answer) {
-      const assistantMessage: DisplayMessage = {
-        id: `${message.id}-assistant`,
-        role: 'assistant',
-        content: replacePreviewUrl(message.answer),
-        createdAt: new Date(parseInt(message.created_at) * 1000 + 1000), // 助手消息时间稍晚于用户消息
-        files: assistantFiles
+        // 处理引用资源
+        if (message.retriever_resources && message.retriever_resources.length > 0) {
+          assistantMessage.retrieverResources = message.retriever_resources
+        }
+        assistantMessages.push(assistantMessage)
       }
-      // 处理引用资源
-      if (message.retriever_resources && message.retriever_resources.length > 0) {
-        assistantMessage.retrieverResources = message.retriever_resources
-      }
-      assistantMessages.push(assistantMessage);
-    }
 
-    return [userMessage, ...assistantMessages];
-  }).flat();
+      return [userMessage, ...assistantMessages]
+    }).flat()
 }
 
 /**
