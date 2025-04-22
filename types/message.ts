@@ -55,6 +55,7 @@ export interface Message {
   created_at: string // 时间戳
   feedback?: Feedback
   retriever_resources?: RetrieverResource[]
+  status: string
 }
 
 export interface MessagesResponse {
