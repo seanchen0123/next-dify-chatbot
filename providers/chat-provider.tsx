@@ -19,6 +19,8 @@ import { toast } from '@/components/ui/custom-toast'
 export function ChatProvider({ userId, appId, children }: { userId: string; appId: string; children: ReactNode }) {
   const router = useRouter()
   const { appParameters } = useApp()
+  // 添加一个标志位来跟踪是否是新创建的会话
+  const [isNewlyCreatedConversation, setIsNewlyCreatedConversation] = useState(false)
   const [conversationId, setConversationId] = useState('')
   const [chatStarted, setChatStarted] = useState(false)
   const [messages, setMessages] = useState<DisplayMessage[]>([])
@@ -98,17 +100,20 @@ export function ChatProvider({ userId, appId, children }: { userId: string; appI
   // 监听 conversationId 变化，加载历史消息
   useEffect(() => {
     const init = async () => {
+      console.log('init')
       setSuggestionQuestions([])
       setUploadedFiles([])
       if (conversationId && userId && appId) {
         setChatStarted(true)
-        await loadMessages(conversationId, userId)
+        if (!isNewlyCreatedConversation) {
+          await loadMessages(conversationId, userId)
+        }
       } else {
         setMessages([])
       }
     }
     init()
-  }, [appId, conversationId, userId])
+  }, [appId, conversationId, userId, isNewlyCreatedConversation])
 
   // 获取当前的会话
   useEffect(() => {
@@ -124,6 +129,7 @@ export function ChatProvider({ userId, appId, children }: { userId: string; appI
     setMessages([]) // 清空消息列表
     setSuggestionQuestions([])
     setUploadedFiles([])
+    setIsNewlyCreatedConversation(true)
 
     // 如果是从布局中调用，需要导航到/chat
     if (window.location.pathname !== `/${appId}/chat`) {
@@ -430,6 +436,8 @@ export function ChatProvider({ userId, appId, children }: { userId: string; appI
 
       // 如果是新对话，更新URL（可选）
       if (!conversationId && newConversationId) {
+        // 标记这是新创建的会话，避免重复加载消息
+        setIsNewlyCreatedConversation(true)
         // 更新状态
         setConversationId(newConversationId)
         // 使用 router.replace 更新 URL，不会刷新当前页面
@@ -653,7 +661,9 @@ export function ChatProvider({ userId, appId, children }: { userId: string; appI
         clearUploadedFiles,
         textToSpeech,
         speechToText,
-        handlePasteEvent
+        handlePasteEvent,
+        isNewlyCreatedConversation,
+        setIsNewlyCreatedConversation
       }}
     >
       {children}

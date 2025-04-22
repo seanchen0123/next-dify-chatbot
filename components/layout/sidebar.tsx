@@ -78,7 +78,7 @@ export function Sidebar({}: SidebarProps) {
   const { resolvedTheme } = useTheme()
 
   // 从 ChatContext 获取会话列表相关状态和方法
-  const { startNewChat, conversations, isLoadingConversations, loadConversations, deleteConversation, renameConversation, userId } =
+  const { startNewChat, conversations, isLoadingConversations, loadConversations, deleteConversation, renameConversation, userId, setIsNewlyCreatedConversation } =
     useChat()
 
   const { appInfo, appId } = useApp()
@@ -260,6 +260,8 @@ export function Sidebar({}: SidebarProps) {
                       )}
                     >
                       <div className='cursor-pointer' onClick={() => {
+                        // 标记切换的会话不是新建类型的会话
+                        setIsNewlyCreatedConversation(false)
                         router.push(`/${appId}/chat/${conversation.id}?userId=${userId}`)
                         if (isMobile) {
                           setOpenMobile(false)

@@ -50,6 +50,8 @@ interface ChatContextType {
   textToSpeech: (messageId?: string, text?: string) => Promise<string | null>
   speechToText: (file: File) => Promise<string | null>
   handlePasteEvent: (event: ClipboardEvent) => void
+  isNewlyCreatedConversation: boolean
+  setIsNewlyCreatedConversation: (isNewlyCreated: boolean) => void
 }
 
 export const ChatContext = createContext<ChatContextType | undefined>(undefined)
