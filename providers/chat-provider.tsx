@@ -310,7 +310,9 @@ export function ChatProvider({ userId, appId, children }: { userId: string; appI
           if (eventData.conversation_id) {
             receivedConversationId = eventData.conversation_id
           }
-          if (eventData.message_id) messageId = eventData.message_id
+          if (eventData.message_id) {
+            messageId = eventData.message_id
+          }
 
           // 处理不同类型的event
           switch (eventData.event) {
