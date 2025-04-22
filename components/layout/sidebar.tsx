@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import Link from 'next/link'
+import { useState, useMemo } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Trash2, Search, Loader2, Edit, MoreHorizontal, MessageCirclePlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -51,7 +50,6 @@ import { useChat } from '@/contexts/chat-context'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn' // 导入中文语言包
 import relativeTime from 'dayjs/plugin/relativeTime' // 相对时间插件
-import { renameConversation } from '@/services/client/conversations'
 import { ThemeToggle } from '../theme-toggle'
 import { useApp } from '@/contexts/app-context'
 import { toast } from '../ui/custom-toast'
@@ -77,10 +75,10 @@ export function Sidebar({}: SidebarProps) {
   const isMobile = useIsMobile()
 
   // 从 ChatContext 获取会话列表相关状态和方法
-  const { startNewChat, conversations, isLoadingConversations, loadConversations, deleteConversation, userId } =
+  const { startNewChat, conversations, isLoadingConversations, loadConversations, deleteConversation, renameConversation, userId } =
     useChat()
 
-  const { appInfo } = useApp()
+  const { appInfo, appId } = useApp()
   const appName = appInfo?.name || ''
 
   // 重命名对话
@@ -88,7 +86,7 @@ export function Sidebar({}: SidebarProps) {
     if (!currentConversation || !newConversationName.trim()) return
 
     try {
-      await renameConversation({ conversationId: currentConversation.id, name: newConversationName, userId })
+      await renameConversation(currentConversation.id, newConversationName)
 
       // 重命名后需要重新加载会话列表
       loadConversations()
@@ -131,6 +129,11 @@ export function Sidebar({}: SidebarProps) {
   const groupedConversations = useMemo(() => {
     if (!filteredConversations.length) return {}
 
+    // 先对会话按创建时间排序（从新到旧）, dify默认是根据更新时间排序的
+    const sortedConversations = [...filteredConversations].sort((a, b) => 
+      parseInt(b.created_at) - parseInt(a.created_at)
+    )
+
     const today = dayjs().startOf('day')
     const yesterday = today.subtract(1, 'day')
     const lastWeek = today.subtract(7, 'day')
@@ -146,7 +149,7 @@ export function Sidebar({}: SidebarProps) {
     // 其他日期分组
     const otherGroups: Record<string, ApiConversation[]> = {}
 
-    filteredConversations.forEach(conv => {
+    sortedConversations.forEach(conv => {
       const createTime = dayjs(parseInt(conv.created_at) * 1000)
 
       if (createTime.isAfter(today)) {
@@ -249,11 +252,11 @@ export function Sidebar({}: SidebarProps) {
                       key={conversation.id}
                       className={cn(
                         'group rounded-md hover:bg-accent px-3 py-2',
-                        pathname === `/chat/${conversation.id}` && 'bg-slate-500/10'
+                        pathname === `/${appId}/chat/${conversation.id}` && 'bg-slate-500/10'
                       )}
                     >
                       <div className='cursor-pointer' onClick={() => {
-                        router.push(`/chat/${conversation.id}?userId=${userId}`)
+                        router.push(`/${appId}/chat/${conversation.id}?userId=${userId}`)
                         if (isMobile) {
                           setOpenMobile(false)
                         }
