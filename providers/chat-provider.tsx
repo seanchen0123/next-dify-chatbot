@@ -122,7 +122,7 @@ export function ChatProvider({ userId, appId, children }: { userId: string; appI
   }, [conversationId, setConversationId, conversations, setConversations])
 
   // 统一的开始新对话逻辑
-  const startNewChat = async (initialPrompt?: string) => {
+  const startNewChat = async () => {
     // 重置状态
     setConversationId('')
     setChatStarted(true)
@@ -134,11 +134,6 @@ export function ChatProvider({ userId, appId, children }: { userId: string; appI
     // 如果是从布局中调用，需要导航到/chat
     if (window.location.pathname !== `/${appId}/chat`) {
       router.replace(`/${appId}/chat?userId=${userId}`)
-    }
-
-    // 通过URL参数传递初始提示(如果有)
-    if (initialPrompt) {
-      await sendMessage(initialPrompt)
     }
   }
 

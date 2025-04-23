@@ -9,7 +9,7 @@ import { UploadFileItem } from '@/types/chat'
 interface ChatContextType {
   appId: string
   userId: string
-  startNewChat: (initialPrompt?: string) => Promise<void>
+  startNewChat: () => Promise<void>
   conversationId: string
   setConversationId: (id: string) => void
   chatStarted: boolean

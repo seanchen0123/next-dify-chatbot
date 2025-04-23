@@ -14,11 +14,18 @@ export default function ChatPage({ params: { appId }}: { params: { appId: string
     '写一个关于未来科技的短篇故事'
   ]
 
-  const { isLoadingConversations, chatStarted, startNewChat } = useChat()
+  const { isLoadingConversations, chatStarted, startNewChat, sendMessage } = useChat()
   const { appInfo, appParameters } = useApp()
   const appName = appInfo?.name || 'AI聊天助手'
   const appDescription = appInfo?.description || '开始一个新的对话，探索AI的无限可能'
   const openingQuestions = appParameters?.suggested_questions.length ? appParameters?.suggested_questions : examplePrompts
+
+  const handleStartNewChat = async (prompt?: string) => {
+    await startNewChat()
+    if (prompt) {
+      await sendMessage(prompt)
+    }
+  }
 
   if (isLoadingConversations && !chatStarted) {
     return <EmptySkeleton />
@@ -33,7 +40,7 @@ export default function ChatPage({ params: { appId }}: { params: { appId: string
           appName={appName}
           appDescription={appDescription}
           openingQuestions={openingQuestions}
-          onStartChat={prompt => startNewChat(prompt)}
+          onStartChat={prompt => handleStartNewChat(prompt)}
         />
       )}
     </div>

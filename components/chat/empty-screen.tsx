@@ -6,7 +6,7 @@ interface EmptyScreenProps {
   appName: string
   appDescription: string
   openingQuestions: string[]
-  onStartChat: (prompt: string) => void
+  onStartChat: (prompt?: string) => void
 }
 
 export function EmptyScreen({ appName, appDescription, openingQuestions, onStartChat }: EmptyScreenProps) {
@@ -33,7 +33,7 @@ export function EmptyScreen({ appName, appDescription, openingQuestions, onStart
       <Button
         variant="outline"
         className="mt-6 py-4 bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 flex items-center justify-center gap-2"
-        onClick={() => onStartChat('')}
+        onClick={() => onStartChat()}
       >
         <MessageCirclePlus />
         <span className="font-medium">开始聊天</span>
