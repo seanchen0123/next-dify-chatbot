@@ -55,6 +55,8 @@ export function ChatMessage({
   const [feedback, setFeedback] = useState<'like' | 'dislike' | null>(null)
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
   const [isRegenerating, setIsRegenerating] = useState(false)
+  // 添加代码块复制状态
+  const [copiedCodeBlock, setCopiedCodeBlock] = useState<string | null>(null)
 
   // 使用 useRef 创建音频引用
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -177,6 +179,23 @@ export function ChatMessage({
     } catch (error) {
       console.error('复制失败:', error)
       toast.error('复制失败')
+    }
+  }
+
+  // 复制代码块内容
+  const copyCodeBlock = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code)
+      setCopiedCodeBlock(code)
+      toast.success('代码已复制到剪贴板')
+
+      // 3秒后重置复制状态
+      setTimeout(() => {
+        setCopiedCodeBlock(null)
+      }, 3000)
+    } catch (error) {
+      console.error('复制代码失败:', error)
+      toast.error('复制代码失败')
     }
   }
 
@@ -492,11 +511,26 @@ export function ChatMessage({
                       code({ node, className, children, ...props }) {
                         // 检查是否是代码块（通过className判断）
                         const match = /language-(\w+)/.exec(className || '')
+                        const codeContent = String(children).replace(/\n$/, '')
 
                         // 如果有language-前缀，说明是代码块，否则是行内代码
                         if (match) {
                           return (
-                            <div className="rounded-md overflow-hidden shadow-sm w-full">
+                            <div className="rounded-md overflow-hidden shadow-sm w-full relative">
+                              {/* 添加复制按钮 */}
+                              <div className="absolute top-2 right-2 z-10">
+                                <button
+                                  onClick={() => copyCodeBlock(codeContent)}
+                                  className="flex items-center justify-center w-8 h-8 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors duration-200"
+                                  title="复制代码"
+                                >
+                                  {copiedCodeBlock === codeContent ? (
+                                    <CheckIcon className="w-4 h-4 text-green-500" />
+                                  ) : (
+                                    <CopyIcon className="w-4 h-4 text-primary" />
+                                  )}
+                                </button>
+                              </div>
                               <SyntaxHighlighter
                                 style={codeTheme}
                                 language={match[1]}
@@ -509,7 +543,7 @@ export function ChatMessage({
                                   borderRadius: '0.5rem'
                                 }}
                               >
-                                {String(children).replace(/\n$/, '')}
+                                {codeContent}
                               </SyntaxHighlighter>
                             </div>
                           )
