@@ -100,7 +100,6 @@ export function ChatProvider({ userId, appId, children }: { userId: string; appI
   // 监听 conversationId 变化，加载历史消息
   useEffect(() => {
     const init = async () => {
-      console.log('init')
       setSuggestionQuestions([])
       setUploadedFiles([])
       if (conversationId && userId && appId) {
@@ -220,7 +219,7 @@ export function ChatProvider({ userId, appId, children }: { userId: string; appI
       return
     }
     if (from_variable_selector && from_variable_selector[1] === 'text') {
-      console.log('收到消息:', answer)
+      // console.log('收到消息:', answer)
       updateLastMessage(answer, message_id)
     } else if (
       from_variable_selector &&
@@ -245,6 +244,7 @@ export function ChatProvider({ userId, appId, children }: { userId: string; appI
   function handleMessageEndEvent(eventData: MessageEndEvent) {
     // console.log('消息结束:', eventData)
     setAnswerStarted(false)
+    setGenerateLoading(false)
     setMessages(prev => {
       const updatedMessages = [...prev]
       const lastMessage = updatedMessages[updatedMessages.length - 1]
@@ -263,6 +263,12 @@ export function ChatProvider({ userId, appId, children }: { userId: string; appI
       }
       return updatedMessages
     })
+  }
+
+  const handleErrorEvent = (eventData: any) => {
+    setAnswerStarted(false)
+    setGenerateLoading(false)
+    updateLastMessage(`发生错误`, eventData.message_id, true)
   }
 
   async function fetchStreamData(data: ChatRequest) {
@@ -339,13 +345,17 @@ export function ChatProvider({ userId, appId, children }: { userId: string; appI
               break
 
             case 'workflow_finished':
-              setGenerateLoading(false)
               break
 
             case 'message_replace':
               // 命中了输出内容审查
               // console.log('消息替换:', eventData)
               handleMessageReplaceEvent(eventData as MessageReplaceEvent)
+              break
+
+            case 'error':
+              // console.log('错误:', eventData)
+              handleErrorEvent(eventData as any)
               break
 
             case 'message_end':
@@ -449,8 +459,6 @@ export function ChatProvider({ userId, appId, children }: { userId: string; appI
         content: '抱歉，处理您的请求时发生错误。',
         createdAt: new Date()
       })
-    } finally {
-      setGenerateLoading(false)
     }
   }
 
@@ -507,8 +515,6 @@ export function ChatProvider({ userId, appId, children }: { userId: string; appI
       await sendMessage(userMessage.content)
     } catch (error) {
       console.error('重新生成消息失败:', error)
-    } finally {
-      setGenerateLoading(false)
     }
   }
 
