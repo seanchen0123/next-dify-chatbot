@@ -1,5 +1,36 @@
-import { toast as sonnerToast, type ToastOptions } from 'sonner'
+import { toast as sonnerToast } from 'sonner'
 import { CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react'
+
+interface ToastClassnames {
+  toast?: string;
+  title?: string;
+  description?: string;
+  loader?: string;
+  closeButton?: string;
+  cancelButton?: string;
+  actionButton?: string;
+  success?: string;
+  error?: string;
+  info?: string;
+  warning?: string;
+  loading?: string;
+  default?: string;
+  content?: string;
+  icon?: string;
+}
+
+interface ToastOptions {
+  className?: string;
+  closeButton?: boolean;
+  descriptionClassName?: string;
+  style?: React.CSSProperties;
+  cancelButtonStyle?: React.CSSProperties;
+  actionButtonStyle?: React.CSSProperties;
+  duration?: number;
+  unstyled?: boolean;
+  classNames?: ToastClassnames;
+  closeButtonAriaLabel?: string;
+}
 
 type ToastType = 'success' | 'error' | 'info' | 'warning'
 
