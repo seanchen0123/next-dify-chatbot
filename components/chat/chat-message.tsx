@@ -31,21 +31,26 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { FilePreview } from './file-preview'
 
 interface ChatMessageProps {
+  appId: string
+  userId: string
   message: DisplayMessage
   showRetrieverResources?: boolean
-  showSuggestedQuestions?: boolean
-  suggestedQuestions?: string[]
-  tts?: boolean
+  tts?: boolean,
+  regenerateMessage: (messageId: string) => Promise<void>
+  textToSpeech?: (messageId?: string, text?: string) => Promise<string | null>
 }
 
 export function ChatMessage({
+  appId,
+  userId,
   message: { id, role, content, retrieverResources, files },
   showRetrieverResources = false,
-  tts = false
+  tts = false,
+  regenerateMessage,
+  textToSpeech
 }: ChatMessageProps) {
   const { resolvedTheme } = useTheme()
   const isMobile = useIsMobile()
-  const { userId, regenerateMessage, textToSpeech, appId } = useChat()
   const [processedContent, setProcessedContent] = useState<{ thinking: string | null; mainContent: string }>({
     thinking: null,
     mainContent: content
@@ -255,6 +260,7 @@ export function ChatMessage({
 
   // 处理语音播放
   const handleTextToSpeech = async () => {
+    if (role!== 'assistant' || !textToSpeech) return
     try {
       // 如果已经在播放，则暂停
       if (isPlaying && audioRef.current) {

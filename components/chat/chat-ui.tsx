@@ -23,7 +23,7 @@ interface ChatUIProps {
 }
 
 export function ChatUI({ chatId }: ChatUIProps) {
-  const { appParameters } = useApp()
+  const { appParameters, appId } = useApp()
   const router = useRouter()
   const {
     setConversationId,
@@ -38,7 +38,10 @@ export function ChatUI({ chatId }: ChatUIProps) {
     uploadingFiles,
     removeFile,
     handlePasteEvent,
-    speechToText
+    speechToText,
+    textToSpeech,
+    regenerateMessage,
+    userId
   } = useChat()
 
   // 移除本地的 messages 状态，使用 context 中的
@@ -170,6 +173,10 @@ export function ChatUI({ chatId }: ChatUIProps) {
                   message={message}
                   showRetrieverResources={appParameters?.retriever_resource.enabled}
                   tts={appParameters?.text_to_speech.enabled}
+                  userId={userId}
+                  appId={appId}
+                  regenerateMessage={regenerateMessage}
+                  textToSpeech={textToSpeech}
                 />
               ))}
               {/* 修改加载动画的显示逻辑：只在生成中且没有开始回答时显示 */}
