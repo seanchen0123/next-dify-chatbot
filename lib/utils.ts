@@ -1,18 +1,17 @@
-import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-import { Message, DisplayMessage, MessageFile } from '@/types/message';
-import { replacePreviewUrl } from './file-utils';
-
+import { type ClassValue, clsx } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+import { Message, DisplayMessage, MessageFile } from '@/types/message'
+import { replacePreviewUrl } from './file-utils'
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+  return twMerge(clsx(inputs))
 }
 
 // 从url中获取参数
 export function getParamFromUrl(url: string, paramName: string) {
-  const regex = new RegExp(`[?&]${paramName}=([^&#]*)`);
-  const result = regex.exec(url);
-  return result ? decodeURIComponent(result[1]) : null;
+  const regex = new RegExp(`[?&]${paramName}=([^&#]*)`)
+  const result = regex.exec(url)
+  return result ? decodeURIComponent(result[1]) : null
 }
 
 // 处理流数据的辅助函数
@@ -22,18 +21,18 @@ export async function processStream(
 ) {
   try {
     while (true) {
-      const { done, value } = await reader.read();
-      
+      const { done, value } = await reader.read()
+
       if (done) {
-        break;
+        break
       }
-      
+
       // 将数据块写入输出流
-      await writer.write(value);
+      await writer.write(value)
     }
   } finally {
     // 确保在完成或错误时关闭写入器
-    await writer.close();
+    await writer.close()
   }
 }
 
@@ -68,7 +67,7 @@ export function formatMessagesToDisplay(messages: Message[]): DisplayMessage[] {
       }
 
       // 创建助手消息（如果有回答）
-      const assistantMessages: DisplayMessage[] = [];
+      const assistantMessages: DisplayMessage[] = []
       if (message.answer) {
         const assistantMessage: DisplayMessage = {
           id: `${message.id}-assistant`,
@@ -81,11 +80,13 @@ export function formatMessagesToDisplay(messages: Message[]): DisplayMessage[] {
         if (message.retriever_resources && message.retriever_resources.length > 0) {
           assistantMessage.retrieverResources = message.retriever_resources
         }
+
         assistantMessages.push(assistantMessage)
       }
 
       return [userMessage, ...assistantMessages]
-    }).flat()
+    })
+    .flat()
 }
 
 /**
@@ -94,9 +95,53 @@ export function formatMessagesToDisplay(messages: Message[]): DisplayMessage[] {
  * @returns 排序后的消息列表
  */
 export function sortMessagesByTime(messages: DisplayMessage[]): DisplayMessage[] {
-  return [...messages].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  return [...messages].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
 }
 
 export function removeMarkdownLinks(text: string) {
-  return text.replace(/!?\[.*?\]\(.*?\)/g, '');
+  return text.replace(/!?\[.*?\]\(.*?\)/g, '')
+}
+
+export function checkEchartsBlock(text: string): { hasEcharts: boolean; echartsOption: object | null } {
+  const regex = /```echarts\n([\s\S]*?)```/g
+  const match = regex.exec(text)
+  if (match) {
+    const chartCode = match[1].trim().replace(/\s+/g, '') // 获取echarts代码块中的内容
+    try {
+      const options = JSON.parse(chartCode)
+      // 简单检查解析后的对象是否存在
+      if (options && typeof options === 'object') {
+        return {
+          hasEcharts: true,
+          echartsOption: options
+        }
+      } else {
+        return {
+          hasEcharts: false,
+          echartsOption: null
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing ECharts options:', error)
+      return {
+        hasEcharts: false,
+        echartsOption: null
+      }
+    }
+  } else {
+    return {
+      hasEcharts: false,
+      echartsOption: null
+    }
+  }
+}
+
+export function isValidEChartsOption(option: any): boolean {
+  try {
+    // 尝试将选项转换为JSON字符串
+    JSON.parse(option)
+    return true // 如果转换成功，则选项有效
+  } catch (error) {
+    return false // 如果转换失败，则选项无效
+  }
 }

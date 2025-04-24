@@ -10,44 +10,48 @@ import {
   PlayIcon,
   PauseIcon,
   VolumeXIcon,
-  Loader2
+  Loader2,
+  BarChart,
+  AlertCircle
 } from 'lucide-react'
-import { cn, removeMarkdownLinks } from '@/lib/utils'
+import { cn, isValidEChartsOption, removeMarkdownLinks } from '@/lib/utils'
 import { Button } from '../ui/button'
-import Markdown from 'react-markdown'
+import Markdown, { Components, Options } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism'
 import { materialLight } from 'react-syntax-highlighter/dist/cjs/styles/prism'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo, memo } from 'react'
 import { useTheme } from 'next-themes'
 import { DisplayMessage } from '@/types/message'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { useChat } from '@/contexts/chat-context'
 import { toast } from '@/components/ui/custom-toast'
 import { submitMessageFeedback } from '@/services/client/messages'
 import { CitationReferences } from './citation-references'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { FilePreview } from './file-preview'
+import { MemoizedEChartsRenderer } from './echarts-renderer'
 
 interface ChatMessageProps {
   appId: string
   userId: string
   message: DisplayMessage
   showRetrieverResources?: boolean
-  tts?: boolean,
+  tts?: boolean
+  generateLoading?: boolean
   regenerateMessage: (messageId: string) => Promise<void>
   textToSpeech?: (messageId?: string, text?: string) => Promise<string | null>
 }
 
-export function ChatMessage({
+export function ChatMessageComponent({
   appId,
   userId,
   message: { id, role, content, retrieverResources, files },
   showRetrieverResources = false,
   tts = false,
   regenerateMessage,
-  textToSpeech
+  textToSpeech,
+  generateLoading
 }: ChatMessageProps) {
   const { resolvedTheme } = useTheme()
   const isMobile = useIsMobile()
@@ -260,7 +264,7 @@ export function ChatMessage({
 
   // 处理语音播放
   const handleTextToSpeech = async () => {
-    if (role!== 'assistant' || !textToSpeech) return
+    if (role !== 'assistant' || !textToSpeech) return
     try {
       // 如果已经在播放，则暂停
       if (isPlaying && audioRef.current) {
@@ -369,6 +373,128 @@ export function ChatMessage({
     }
   }, [])
 
+  const renderCodeBlock = useMemo(() => {
+    const CodeBlock: Components['code'] = ({ node, className, children, ...props }) => {
+      // 检查是否是代码块（通过className判断）
+      const match = /language-(\w+)/.exec(className || '')
+      const codeContent = String(children).replace(/\n$/, '')
+
+      // 检查是否是echarts代码块
+      if (match && match[1] === 'echarts') {
+        if (isValidEChartsOption(codeContent)) {
+          // 如果能正常解析成json文件，则渲染图表
+          const options = JSON.parse(codeContent)
+          // 渲染图表
+          return (
+            <div className="w-full">
+              <div className="flex items-center justify-between mb-2 bg-muted/50 shadow-sm p-2 rounded-md">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <BarChart className="w-4 h-4" />
+                  <span>ECharts图表</span>
+                </div>
+                <button
+                  onClick={() => copyCodeBlock(codeContent)}
+                  className="flex items-center justify-center w-8 h-8 rounded-md bg-primary/10 hover:bg-primary/20 duration-200 text-primary"
+                  title="复制配置"
+                >
+                  <CopyIcon className="w-4 h-4" />
+                </button>
+              </div>
+              <MemoizedEChartsRenderer
+                options={options}
+                height={400}
+                className="border border-muted-foreground/20 rounded-md"
+              />
+            </div>
+          )
+        } else {
+          if (!generateLoading) {
+            // 如果生成完成后仍然无法解析，则显示错误提示
+            return (
+              <div className="w-full">
+                <div className="flex items-center justify-between mb-2 bg-muted/50 shadow-sm p-2 rounded-md">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <BarChart className="w-4 h-4" />
+                    <span>ECharts图表</span>
+                  </div>
+                  <button
+                    onClick={() => copyCodeBlock(codeContent)}
+                    className="flex items-center justify-center w-8 h-8 rounded-md bg-primary/10 hover:bg-primary/20 duration-200 text-primary"
+                    title="复制配置"
+                  >
+                    <CopyIcon className="w-4 h-4" />
+                  </button>
+                </div>
+                <div
+                  className={`relative flex flex-col items-center justify-center border border-red-300 bg-red-50 dark:bg-red-950/20 rounded-md p-4`}
+                  style={{ width: '100%', height: '180px' }}
+                >
+                  <AlertCircle className="w-8 h-8 text-red-500 mb-2" />
+                  <p className="text-red-600 dark:text-red-400 text-sm font-medium">图表渲染失败</p>
+                  <p className="text-red-500/70 dark:text-red-400/70 text-xs mt-1">
+                    请检查图表配置是否正确
+                  </p>
+                </div>
+              </div>
+            )
+          } else {
+            // 如果正在生成中，则显示loading
+            return (
+              <div className="my-4 w-full">
+                <div className="p-2 flex items-center justify-center gap-1 text-xs text-primary bg-muted/50 shadow-md">
+                  <BarChart className="w-4 h-4" />
+                  <span>正在生成ECharts配置...</span>
+                </div>
+              </div>
+            )
+          }
+        }
+      }
+
+      // 如果有language-前缀，说明是代码块，否则是行内代码
+      if (match) {
+        return (
+          <div className="rounded-md overflow-hidden shadow-sm w-full relative">
+            {/* 添加复制按钮 */}
+            <div className="absolute top-2 right-2 z-10">
+              <button
+                onClick={() => copyCodeBlock(codeContent)}
+                className="flex items-center justify-center w-8 h-8 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors duration-200"
+                title="复制代码"
+              >
+                <CopyIcon className="w-4 h-4 text-primary" />
+              </button>
+            </div>
+            <SyntaxHighlighter
+              style={codeTheme}
+              language={match[1]}
+              PreTag="div"
+              wrapLines={true}
+              customStyle={{
+                width: '100%', // 设置宽度为100%以填充父元素的宽度
+                margin: 0,
+                padding: '0.5rem',
+                borderRadius: '0.5rem'
+              }}
+            >
+              {codeContent}
+            </SyntaxHighlighter>
+          </div>
+        )
+      } else {
+        return (
+          <code
+            className={cn(className, 'bg-muted px-1.5 py-0.5 rounded-sm font-mono text-sm')}
+            {...props}
+          >
+            {children}
+          </code>
+        )
+      }
+    }
+    return CodeBlock
+  }, [codeTheme])
+
   return (
     <div className="flex flex-col items-center w-full max-w-3xl text-sm">
       <div className={cn('flex flex-col w-full mb-2', role === 'user' ? 'items-end' : 'items-start')}>
@@ -468,7 +594,7 @@ export function ChatMessage({
           {role === 'user' ? (
             <div className="max-w-prose">
               {files && files.length > 0 && <FilePreview inputPreview={true} inputFiles={files} />}
-              <Markdown>{content}</Markdown>
+              {content}
             </div>
           ) : (
             <div className="flex items-start w-full gap-3">
@@ -514,56 +640,8 @@ export function ChatMessage({
                   <Markdown
                     remarkPlugins={[remarkGfm]}
                     components={{
-                      code({ node, className, children, ...props }) {
-                        // 检查是否是代码块（通过className判断）
-                        const match = /language-(\w+)/.exec(className || '')
-                        const codeContent = String(children).replace(/\n$/, '')
-
-                        // 如果有language-前缀，说明是代码块，否则是行内代码
-                        if (match) {
-                          return (
-                            <div className="rounded-md overflow-hidden shadow-sm w-full relative">
-                              {/* 添加复制按钮 */}
-                              <div className="absolute top-2 right-2 z-10">
-                                <button
-                                  onClick={() => copyCodeBlock(codeContent)}
-                                  className="flex items-center justify-center w-8 h-8 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors duration-200"
-                                  title="复制代码"
-                                >
-                                  {copiedCodeBlock === codeContent ? (
-                                    <CheckIcon className="w-4 h-4 text-green-500" />
-                                  ) : (
-                                    <CopyIcon className="w-4 h-4 text-primary" />
-                                  )}
-                                </button>
-                              </div>
-                              <SyntaxHighlighter
-                                style={codeTheme}
-                                language={match[1]}
-                                PreTag="div"
-                                wrapLines={true}
-                                customStyle={{
-                                  width: '100%', // 设置宽度为100%以填充父元素的宽度
-                                  margin: 0,
-                                  padding: '0.5rem',
-                                  borderRadius: '0.5rem'
-                                }}
-                              >
-                                {codeContent}
-                              </SyntaxHighlighter>
-                            </div>
-                          )
-                        } else {
-                          return (
-                            <code
-                              className={cn(className, 'bg-muted px-1.5 py-0.5 rounded-sm font-mono text-sm')}
-                              {...props}
-                            >
-                              {children}
-                            </code>
-                          )
-                        }
-                      }
+                      // 虽然缓存了chat-message组件，但每次交互都会重新渲染，所以这里需要缓存code组件
+                      code: renderCodeBlock
                     }}
                   >
                     {processedContent.mainContent}
@@ -582,3 +660,41 @@ export function ChatMessage({
     </div>
   )
 }
+
+// 使用 memo 包装组件并导出
+export const ChatMessage = memo(ChatMessageComponent, (prevProps, nextProps) => {
+  // 只有在以下情况下才重新渲染:
+  // 1. 消息内容变化
+  // 2. 消息ID变化
+  // 3. 重要的交互状态变化 (如 showRetrieverResources, tts)
+  // 4. generateLoading 从 true 变为 false (消息生成完成)
+
+  const prevMessage = prevProps.message
+  const nextMessage = nextProps.message
+
+  // 检查消息基本属性是否变化
+  const messageChanged =
+    prevMessage.id !== nextMessage.id ||
+    prevMessage.content !== nextMessage.content ||
+    prevMessage.role !== nextMessage.role
+
+  // 检查文件是否变化
+  const filesChanged = JSON.stringify(prevMessage.files) !== JSON.stringify(nextMessage.files)
+
+  // 检查引用资源是否变化
+  const resourcesChanged =
+    JSON.stringify(prevMessage.retrieverResources) !== JSON.stringify(nextMessage.retrieverResources)
+
+  // 检查功能开关是否变化
+  const featuresChanged =
+    prevProps.showRetrieverResources !== nextProps.showRetrieverResources || prevProps.tts !== nextProps.tts
+
+  // 特殊处理 generateLoading:
+  // 只有当 generateLoading 从 true 变为 false 时才触发重新渲染
+  // 这样可以在生成完成时更新 UI，但在输入时不会触发重新渲染
+  const loadingChanged = prevProps.generateLoading === true && nextProps.generateLoading === false
+
+  // 如果任何一项变化，返回 false 表示需要重新渲染
+  // 否则返回 true 表示可以使用缓存的组件
+  return !(messageChanged || filesChanged || resourcesChanged || featuresChanged || loadingChanged)
+})

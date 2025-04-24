@@ -177,6 +177,7 @@ export function ChatUI({ chatId }: ChatUIProps) {
                   appId={appId}
                   regenerateMessage={regenerateMessage}
                   textToSpeech={textToSpeech}
+                  generateLoading={generateLoading}
                 />
               ))}
               {/* 修改加载动画的显示逻辑：只在生成中且没有开始回答时显示 */}
