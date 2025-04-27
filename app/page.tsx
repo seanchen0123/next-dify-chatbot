@@ -96,7 +96,16 @@ function HomeRouteDecision() {
 
 export default function HomePage() {
   return (
-    <Suspense fallback={<div className="flex justify-center items-center h-screen">加载中...</div>}>
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center h-screen">
+          <div className="flex items-center gap-2">
+            <Loader2 className="w-7 h-7 animate-spin text-primary" />
+            <span className="text-sm text-primary">加载中...</span>
+          </div>
+        </div>
+      }
+    >
       <HomeRouteDecision />
     </Suspense>
   )

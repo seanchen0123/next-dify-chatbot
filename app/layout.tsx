@@ -2,6 +2,9 @@ import type { Metadata } from 'next'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Inter } from 'next/font/google'
+import { Suspense } from 'react'
+import { NavigationProgress } from '@/components/nprogress'
+import 'nprogress/nprogress.css'
 import './globals.css'
 
 const inter = Inter({
@@ -26,6 +29,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
           <Toaster 
