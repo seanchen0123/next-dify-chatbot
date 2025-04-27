@@ -453,6 +453,8 @@ export function ChatMessageComponent({
 
       // 如果有language-前缀，说明是代码块，否则是行内代码
       if (match) {
+        // 检查代码是否只有一行（不包含换行符）
+        const isSingleLine = !codeContent.includes('\n');
         return (
           <div className="rounded-md overflow-hidden shadow-sm w-full relative">
             {/* 添加复制按钮 */}
@@ -474,7 +476,8 @@ export function ChatMessageComponent({
                 width: '100%', // 设置宽度为100%以填充父元素的宽度
                 margin: 0,
                 padding: '0.5rem',
-                borderRadius: '0.5rem'
+                borderRadius: '0.5rem',
+                minHeight: isSingleLine ? '3rem' : 'auto'
               }}
             >
               {codeContent}
@@ -497,10 +500,10 @@ export function ChatMessageComponent({
 
   return (
     <div className="flex flex-col items-center w-full max-w-3xl text-sm">
-      <div className={cn('flex flex-col w-full mb-2', role === 'user' ? 'items-end' : 'items-start')}>
+      <div className={cn('flex flex-col w-full mb-2', role === 'user' ? 'items-end pl-12' : 'items-start')}>
         <div
           className={cn(
-            'group relative flex py-2 rounded-xl',
+            'group relative flex py-2 rounded-xl max-w-[90ch]',
             role === 'user' ? 'bg-sky-600/10 px-3' : 'bg-background w-full'
           )}
         >
@@ -592,7 +595,7 @@ export function ChatMessageComponent({
           </div>
 
           {role === 'user' ? (
-            <div className="max-w-prose">
+            <div className='w-full' >
               {files && files.length > 0 && <FilePreview inputPreview={true} inputFiles={files} />}
               {content}
             </div>
@@ -601,12 +604,7 @@ export function ChatMessageComponent({
               <div className="h-10 w-10 p-1 border-2 border-primary/90 rounded-full shrink-0 flex items-center justify-center bg-primary/10">
                 <Bot className="h-6 w-6 text-primary" />
               </div>
-              <div
-                className={cn(
-                  'prose prose-sm dark:prose-invert prose-pre:border-0 prose-pre:bg-transparent w-full',
-                  isMobile ? 'pr-14' : 'pr-0'
-                )}
-              >
+              <div className='prose prose-sm dark:prose-invert prose-pre:border-0 prose-pre:bg-transparent flex-1 min-w-0'>
                 {/* 思考过程部分 - 使用 Collapsible 组件 */}
                 {processedContent.thinking && (
                   <div className="pt-2 px-2 bg-muted/50 rounded-md border border-muted-foreground/20 w-full">
