@@ -199,8 +199,8 @@ export function Sidebar({}: SidebarProps) {
 
   return (
     <ShadcnSidebar>
-      <SidebarHeader className='my-2'>
-        <div className="flex items-center justify-between w-full h-10 max-h-10">
+      <SidebarHeader className='my-2 pt-0.5'>
+        <div className="flex items-center justify-between w-full h-14 max-h-10">
           {isMobile && <SidebarTrigger />}
           <div className="flex-1 flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={handleSearch} className="h-7 w-7">
@@ -221,7 +221,7 @@ export function Sidebar({}: SidebarProps) {
         </div>
         <Button
           variant="outline"
-          className="py-4 mt-2 w-full bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 flex items-center justify-center gap-2"
+          className="py-4 mt-1 w-full bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 flex items-center justify-center gap-2"
           onClick={async () => {
             await startNewChat()
             if (isMobile) {
