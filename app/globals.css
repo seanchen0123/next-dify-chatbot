@@ -187,3 +187,9 @@
 [data-radix-scroll-area-viewport] > div {
   display: block !important;
 }
+
+/* 减小 Markdown 中 hr 标签的上下边距 */
+.prose :where(hr):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
